@@ -1,10 +1,10 @@
 {
-	"id": "obsidian-sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.1",
-	"minAppVersion": "0.9.12",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md/about",
+	"id": "obsidian-rollover-daily-todos",
+	"name": "Rollover Daily Todos",
+	"version": "1.0.0",
+	"minAppVersion": "0.9.20",
+	"description": "This plugin will rollover any unfinished todo items from your last daily note into today's note",
+	"author": "Matthew Sessions",
+	"authorUrl": "https://matthewsessions.com",
 	"isDesktopOnly": false
 }
