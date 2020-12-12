@@ -3,7 +3,7 @@
 	"name": "Rollover Daily Todos",
 	"version": "1.0.0",
 	"minAppVersion": "0.9.20",
-	"description": "This plugin will rollover any unfinished todo items from your last daily note into today's note",
+	"description": "This plugin will rollover any unchecked checkboxes from your last daily note into today's note",
 	"author": "Matthew Sessions",
 	"authorUrl": "https://matthewsessions.com",
 	"isDesktopOnly": false
