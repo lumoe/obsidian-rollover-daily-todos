@@ -27,7 +27,7 @@ export default class RolloverTodosPlugin extends Plugin {
 
 	async getAllUnfinishedTodos(file) {
 		const contents = await this.app.vault.read(file);
-		const unfinishedTodosRegex = /- \[ \].*/g
+		const unfinishedTodosRegex = /\t*- \[ \].*/g
 		const unfinishedTodos = Array.from(contents.matchAll(unfinishedTodosRegex)).map(([todo]) => todo)
 		return unfinishedTodos;
 	}
