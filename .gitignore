@@ -10,4 +10,7 @@ package-lock.json
 main.js
 *.js.map
 
+# obsidian dev files
+data.json
+
 .DS_Store
