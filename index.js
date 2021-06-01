@@ -50,7 +50,7 @@ export default class RolloverTodosPlugin extends Plugin {
 
 			// is today's daily note
 			const today = new Date();
-			if (today.toISOString().slice(0, 10) !== file.basename) return;
+			if (getISOFormattedDate(today) !== file.basename) return;
 
 			// was just created
 			if (today.getTime() - file.stat.ctime > MAX_TIME_SINCE_CREATION) return;
@@ -112,4 +112,13 @@ class RollverTodosSettings extends PluginSettingTab {
 				})
 			)
 		}
+}
+
+/**
+ * Return an ISO formatted date only for the users current timezone.
+ */
+function getISOFormattedDate(date) {
+	const month = `${date.getMonth() + 1}`.padStart(2, "0")
+	const day = `${date.getDate()}`.padStart(2, "0");
+	return date.getFullYear() + "-" + month + "-" + day;
 }
