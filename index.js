@@ -1,5 +1,7 @@
 import { Notice, Plugin, Setting, PluginSettingTab } from 'obsidian';
 
+const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
+
 export default class RolloverTodosPlugin extends Plugin {
 	checkDailyNotesEnabled() {
 		return this.app.vault.config.pluginEnabledStatus['daily-notes'];
@@ -51,7 +53,7 @@ export default class RolloverTodosPlugin extends Plugin {
 			if (today.toISOString().slice(0, 10) !== file.basename) return;
 
 			// was just created
-			if (today.getTime() - file.stat.ctime > 1) return;
+			if (today.getTime() - file.stat.ctime > MAX_TIME_SINCE_CREATION) return;
 
 			const lastDailyNote = this.getLastDailyNote();
 			if (lastDailyNote == null) return;
@@ -61,10 +63,10 @@ export default class RolloverTodosPlugin extends Plugin {
 			let dailyNoteContent = await this.app.vault.read(file)
 
 			if (this.settings.templateHeading !== 'none') {
-				const heading = this.settings.templateHeading + '\n'
-				dailyNoteContent = dailyNoteContent.replace(heading, heading + unfinishedTodos.join('\n') + '\n')
+				const heading = this.settings.templateHeading;
+				dailyNoteContent = dailyNoteContent.replace(heading, heading + '\n' + unfinishedTodos.join('\n') + '\n')
 			} else {
-				dailyNoteContent += unfinishedTodos.join('\n')
+				dailyNoteContent += '\n' + unfinishedTodos.join('\n')
 			}
 
 			await this.app.vault.modify(file, dailyNoteContent);
