@@ -3,8 +3,10 @@ import { Notice, Plugin, Setting, PluginSettingTab } from 'obsidian';
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
 export default class RolloverTodosPlugin extends Plugin {
-	checkDailyNotesEnabled() {
-		return this.app.vault.config.pluginEnabledStatus['daily-notes'];
+	async checkDailyNotesEnabled() {
+		const corePluginListPath = path.join(this.app.vault.configDir, "core-plugins.json")
+		const corePluginList = JSON.parse(await this.app.vault.adapter.read(corePluginListPath))
+		return corePluginList.includes('daily-notes')
 	}
 
 	getDailyNotesDirectory() {
@@ -18,7 +20,7 @@ export default class RolloverTodosPlugin extends Plugin {
 
 	getLastDailyNote() {
 		const dailyNotesDirectory = this.getDailyNotesDirectory();
-		
+
 		const files = this.app.vault.getAllLoadedFiles()
 			.filter(file => file.path.startsWith(dailyNotesDirectory))
 			.filter(file => file.basename != null)
@@ -37,7 +39,7 @@ export default class RolloverTodosPlugin extends Plugin {
 	async onload() {
 		this.settings = await this.loadData() || { templateHeading: 'none' };
 
-		if (!this.checkDailyNotesEnabled()) {
+		if (!await this.checkDailyNotesEnabled()) {
 			new Notice('Daily notes plugin is not enabled. Enable it and then reload Obsidian.', 2000)
 		}
 
@@ -59,7 +61,7 @@ export default class RolloverTodosPlugin extends Plugin {
 			if (lastDailyNote == null) return;
 
 			const unfinishedTodos = await this.getAllUnfinishedTodos(lastDailyNote)
-			
+
 			let dailyNoteContent = await this.app.vault.read(file)
 
 			if (this.settings.templateHeading !== 'none') {
@@ -83,7 +85,7 @@ class RollverTodosSettings extends PluginSettingTab {
 	async getTemplateHeadings() {
 		const template = this.app.internalPlugins.plugins['daily-notes'].instance.options.template;
 		if (!template) return [];
-		
+
 		const file = this.app.vault.getAbstractFileByPath(template + '.md')
 		const templateContents = await this.app.vault.read(file)
 		const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(([heading]) => heading)
@@ -103,7 +105,7 @@ class RollverTodosSettings extends PluginSettingTab {
 						acc[heading] = heading;
 						return acc;
 					}, {}),
-					'none': 'None' 
+					'none': 'None'
 				})
 				.setValue(this.plugin?.settings.templateHeading)
 				.onChange(value => {
@@ -111,7 +113,7 @@ class RollverTodosSettings extends PluginSettingTab {
 					this.plugin.saveData(this.plugin.settings)
 				})
 			)
-		}
+	}
 }
 
 /**
