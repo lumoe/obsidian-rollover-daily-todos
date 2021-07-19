@@ -4,7 +4,8 @@ const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
 export default class RolloverTodosPlugin extends Plugin {
 	checkDailyNotesEnabled() {
-		return this.app.vault.config.pluginEnabledStatus['daily-notes'];
+        const dailyNotes = this.app.internalPlugins.getPluginById('daily-notes');
+        return dailyNotes !== null && dailyNotes.enabled;
 	}
 
 	getDailyNotesDirectory() {
