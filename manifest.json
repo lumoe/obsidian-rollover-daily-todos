@@ -1,8 +1,8 @@
 {
 	"id": "obsidian-rollover-daily-todos",
 	"name": "Rollover Daily Todos",
-	"version": "1.0.2",
-	"minAppVersion": "0.9.20",
+	"version": "1.0.3",
+	"minAppVersion": "0.12.12",
 	"description": "This plugin will rollover any unchecked checkboxes from your last daily note into today's note",
 	"author": "Matthew Sessions",
 	"authorUrl": "https://matthewsessions.com",
