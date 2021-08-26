@@ -24,8 +24,10 @@ export default class RolloverTodosPlugin extends Plugin {
 			.filter(file => file.path.startsWith(dailyNotesDirectory))
 			.filter(file => file.basename != null)
 			.sort((a, b) => new Date(b.basename).getTime() - new Date(a.basename).getTime());
-
-		return files[1];
+		
+		const today = new Date();
+		const prev_files = files.filter(f => new Date(f.basename).getTime() < today.getTime())
+		return prev_files[1];
 	}
 
 	async getAllUnfinishedTodos(file) {
