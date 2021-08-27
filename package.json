@@ -15,5 +15,8 @@
     "@rollup/plugin-node-resolve": "^9.0.0",
     "obsidian": "https://github.com/obsidianmd/obsidian-api/tarball/master",
     "rollup": "^2.32.1"
+  },
+  "dependencies": {
+    "moment": "^2.29.1"
   }
 }

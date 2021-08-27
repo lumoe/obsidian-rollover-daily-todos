@@ -1,4 +1,5 @@
 import { Notice, Plugin, Setting, PluginSettingTab } from 'obsidian';
+import moment from 'moment';
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
@@ -17,15 +18,33 @@ export default class RolloverTodosPlugin extends Plugin {
 		return this.dailyNotesDirectory;
 	}
 
+	getDailyNotesDateFormat() {
+		if (this.dailyNotesDateFormat != null) {
+			return this.dailyNotesDateFormat;
+		}
+
+		this.dailyNotesDateFormat = this.app.internalPlugins.plugins['daily-notes'].instance.options.format;
+		return this.dailyNotesDateFormat;
+	}
+
 	getLastDailyNote() {
 		const dailyNotesDirectory = this.getDailyNotesDirectory();
 		
 		const files = this.app.vault.getAllLoadedFiles()
 			.filter(file => file.path.startsWith(dailyNotesDirectory))
 			.filter(file => file.basename != null)
-			.sort((a, b) => new Date(b.basename).getTime() - new Date(a.basename).getTime());
+			.sort((a, b) => this.getTimestamp(b.basename) - this.getTimestamp(a.basename))
 
 		return files[1];
+	}
+
+	getTimestamp(dateString) {
+		return moment(dateString, this.getDailyNotesDateFormat()).valueOf()
+	}
+
+	getFormattedDate(date) {
+		const dailyNotesDateFormat = this.getDailyNotesDateFormat();
+		return moment(date).format(dailyNotesDateFormat)
 	}
 
 	async getAllUnfinishedTodos(file) {
@@ -51,7 +70,7 @@ export default class RolloverTodosPlugin extends Plugin {
 
 			// is today's daily note
 			const today = new Date();
-			if (getISOFormattedDate(today) !== file.basename) return;
+			if (this.getFormattedDate(today) !== file.basename) return;
 
 			// was just created
 			if (today.getTime() - file.stat.ctime > MAX_TIME_SINCE_CREATION) return;
@@ -113,13 +132,4 @@ class RollverTodosSettings extends PluginSettingTab {
 				})
 			)
 		}
-}
-
-/**
- * Return an ISO formatted date only for the users current timezone.
- */
-function getISOFormattedDate(date) {
-	const month = `${date.getMonth() + 1}`.padStart(2, "0")
-	const day = `${date.getDate()}`.padStart(2, "0");
-	return date.getFullYear() + "-" + month + "-" + day;
 }
