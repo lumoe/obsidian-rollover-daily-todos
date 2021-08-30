@@ -4,7 +4,7 @@ import commonjs from '@rollup/plugin-commonjs';
 const isProd = (process.env.BUILD === 'production');
 
 export default {
-  input: 'index.js',
+  input: 'src/index.js',
   output: {
     file: 'main.js',
     sourcemap: 'inline',
