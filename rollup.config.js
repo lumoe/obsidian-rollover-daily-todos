@@ -1,4 +1,4 @@
-import {nodeResolve} from '@rollup/plugin-node-resolve';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 
 const isProd = (process.env.BUILD === 'production');
@@ -14,7 +14,7 @@ export default {
   },
   external: ['obsidian'],
   plugins: [
-    nodeResolve({browser: true}),
+    nodeResolve({ browser: true }),
     commonjs(),
   ]
 };
