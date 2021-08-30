@@ -171,8 +171,12 @@ class RollverTodosSettings extends PluginSettingTab {
 	async getTemplateHeadings() {
 		const { template } = getDailyNoteSettings()
 		if (!template) return [];
+		
+		let file = this.app.vault.getAbstractFileByPath(template)
+		if (file == null) {
+			file = this.app.vault.getAbstractFileByPath(template + '.md')
+		}
 
-		const file = this.app.vault.getAbstractFileByPath(template + '.md')
 		const templateContents = await this.app.vault.read(file)
 		const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(([heading]) => heading)
 		return allHeadings;
