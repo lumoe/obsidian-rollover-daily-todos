@@ -6,6 +6,7 @@ import RolloverSettingTab from './ui/RolloverSettingTab'
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
+/* Just some boilerplate code for recursively going through subheadings for later
 function createRepresentationFromHeadings(headings) {
   let i = 0;
   const tags = [];
@@ -31,9 +32,9 @@ function createRepresentationFromHeadings(headings) {
   })(-1);
   return tags.join('\n');
 }
+*/
 
 export default class RolloverTodosPlugin extends Plugin {
-
   async loadSettings() {
     const DEFAULT_SETTINGS = {
       templateHeading: 'none',
@@ -77,7 +78,6 @@ export default class RolloverTodosPlugin extends Plugin {
 
     // sort by date
     const sorted = dailyNotesTodayOrEarlier.sort((a, b) => moment(b.basename, format).valueOf() - moment(a.basename, format).valueOf());
-
     return sorted[1];
   }
 
