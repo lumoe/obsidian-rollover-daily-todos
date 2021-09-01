@@ -18,10 +18,10 @@ Note that if you create a daily note in the future, and you try to run this comm
 
 ## Requirements
 
-- [x] You must have either:
+- [ ] You must have either:
   1. `Daily notes` plugin installed *or*
   2. `Periodic Notes` plugin installed AND the **Daily Notes** setting toggled on
-- [x] A Note folder set in one of these plugins. Inside it you must have:
+- [ ] A Note folder set in one of these plugins. Inside it you must have:
   1. 2 or more notes
   2. All notes must be named in the format you use for daily notes (for example `2021-08-29` for `YYYY-MM-DD` )
 
@@ -45,12 +45,12 @@ By default, this plugin will roll over anything that has a checkbox, whether it 
 
 ## Bugs/Issues
 
-- Sometimes you will use this plugin, and your unfinished todos will stay in the same spot. These could be formatting issues.
-1. Regex is used to search for unfinished todos: `/\t*- \[ \].*/g`
-2. At a minimum, they need to look like: `start of line | tabs`-` `[` `]`Your text goes here`
-3. If you use spaces instead of tabs at the start of the line, the behavior of the plugin can be inconsistent. Sometimes it'll roll items over, but not delete them from the previous day when you have that option toggled on.
+1. Sometimes you will use this plugin, and your unfinished todos will stay in the same spot. These could be formatting issues.
+- Regex is used to search for unfinished todos: `/\t*- \[ \].*/g`
+- At a minimum, they need to look like: `start of line | tabs`-` `[` `]`Your text goes here`
+- If you use spaces instead of tabs at the start of the line, the behavior of the plugin can be inconsistent. Sometimes it'll roll items over, but not delete them from the previous day when you have that option toggled on.
 
-- Sometimes, if you trigger the `rollover` function too quickly, it will read the state of a file before the new data was saved to disk. For example, if you add a new incomplete todo to yesterday's daily note, and then quickly run the `Rollover Todos Now` command, it may grab the state of the file a second or two before you ran the command. If this happens, just run the `Undo last rollover` command. Wait a second or two, then try rolling over todos again.
+2. Sometimes, if you trigger the `rollover` function too quickly, it will read the state of a file before the new data was saved to disk. For example, if you add a new incomplete todo to yesterday's daily note, and then quickly run the `Rollover Todos Now` command, it may grab the state of the file a second or two before you ran the command. If this happens, just run the `Undo last rollover` command. Wait a second or two, then try rolling over todos again.
 
 For example (no template heading, empty todos toggled on):
 ```markdown
