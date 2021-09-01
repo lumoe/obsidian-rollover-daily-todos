@@ -13,4 +13,8 @@ main.js
 # obsidian dev files
 data.json
 
+# macOS
 .DS_Store
+
+# local developer scripts
+deployLocally.js
