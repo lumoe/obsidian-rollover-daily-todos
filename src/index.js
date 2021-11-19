@@ -127,7 +127,7 @@ export default class RolloverTodosPlugin extends Plugin {
     if (!this.isDailyNotesEnabled()) {
       new Notice('RolloverTodosPlugin unable to rollover unfinished todos: Please enable Daily Notes, or Periodic Notes (with daily notes enabled).', 10000)
     } else {
-      const { templateHeading, deleteOnComplete, removeEmptyTodos } = this.settings;
+      const { templateHeading, deleteOnComplete, preserveIndentation, removeEmptyTodos } = this.settings;
 
       // check if there is a daily note from yesterday
       const lastDailyNote = this.getLastDailyNote();
@@ -158,12 +158,23 @@ export default class RolloverTodosPlugin extends Plugin {
       // Potentially filter todos from yesterday for today
       let todosAdded = 0
       let emptiesToNotAddToTomorrow = 0
-      let todos_today = !removeEmptyTodos ? todos_yesterday : []
+      let todos_today = removeEmptyTodos ? [] : todos_yesterday 
       if (removeEmptyTodos) {
         todos_yesterday.forEach((line, i) => {
           const trimmedLine = (line || "").trim()
           if ((trimmedLine != '- [ ]') && (trimmedLine != '- [  ]')) {
-            todos_today.push(line)
+            if (preserveIndentation){
+              // Get index of first non-whitespace character
+              // (Equivalent to counting)
+              indentation = line.search(/\S|$/);
+            }else{
+              indentation = 0
+            }
+
+            todos_today.push({
+              indentation: indentation,
+              content:line
+            })
             todosAdded++
           } else {
             emptiesToNotAddToTomorrow++
@@ -183,7 +194,10 @@ export default class RolloverTodosPlugin extends Plugin {
           file: file,
           oldContent: `${dailyNoteContent}`
         }
-        const todos_todayString = `\n${todos_today.join('\n')}`
+        todos_todayString = `\n`
+        todos_today.forEach(element => {
+          todosAddedString = todosAddedString + ` `*element.indentation + element.content + `\n`
+        });
 
         // If template heading is selected, try to rollover to template heading
         if (templateHeadingSelected) {
