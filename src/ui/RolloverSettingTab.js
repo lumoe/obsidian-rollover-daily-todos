@@ -17,7 +17,7 @@ export default class RolloverSettingTab extends PluginSettingTab {
     }
 
     const templateContents = await this.app.vault.read(file)
-    const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(([heading]) => heading)
+    const allHeadings = Array.from(templateContents.matchAll(/#{1,}\s?.*/g)).map(([heading]) => heading)
     return allHeadings;
   }
 
@@ -26,8 +26,8 @@ export default class RolloverSettingTab extends PluginSettingTab {
 
     this.containerEl.empty()
     new Setting(this.containerEl)
-      .setName('Template heading')
-      .setDesc('Which heading from your template should the todos go under')
+      .setName('Template heading or tag')
+      .setDesc('Which heading or tag from your template should the todos go under')
       .addDropdown((dropdown) => dropdown
         .addOptions({
           ...templateHeadings.reduce((acc, heading) => {
