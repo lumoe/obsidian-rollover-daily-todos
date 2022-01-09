@@ -61,7 +61,7 @@ You type in:
 
 And then you run the Rollover Todos Now command. Today's daily note might look like:
 
-- [ ] Take out the t
+- [ ] Take out the trash
 
 And the previous day might look like
 
