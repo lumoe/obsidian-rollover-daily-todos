@@ -65,7 +65,7 @@ And then you run the Rollover Todos Now command. Today's daily note might look l
 
 And the previous day might look like
 
-- [x] Do the dishesrash
+- [x] Do the dishes
 ```
 
 ## Installation
