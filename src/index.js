@@ -63,7 +63,7 @@ export default class RolloverTodosPlugin extends Plugin {
     const { folder, format } = getDailyNoteSettings();
 
     // get all notes in directory that aren't null
-    const dailyNoteFiles = this.app.vault.getAllLoadedFiles()
+    const dailyNoteFiles = this.app.vault.getMarkdownFiles()
       .filter(file => file.path.startsWith(folder))
       .filter(file => file.basename != null)
 
