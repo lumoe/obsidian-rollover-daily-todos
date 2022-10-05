@@ -118,7 +118,8 @@ export default class RolloverTodosPlugin extends Plugin {
     // is today's daily note
     const today = new Date();
     const todayFormatted = window.moment(today).format(format);
-    if (todayFormatted !== file.basename) return;
+    const filePathConstructed = `${folder}${todayFormatted}.${file.extension}`;
+    if (filePathConstructed !== file.path) return;
 
     // was just created
     if ((today.getTime() - file.stat.ctime > MAX_TIME_SINCE_CREATION) && !ignoreCreationTime) return;
