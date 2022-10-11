@@ -1,6 +1,6 @@
 # Rollover Daily Todos
 
-*This plugin is no longer maintained.* I no longer use it and don't have the time to maintain it. I am happy to transfer ownership to someone else. Just create an issue or discussion and I'll get the transfer done.
+**This plugin is no longer maintained.** I no longer use it and don't have the time to maintain it. I am happy to transfer ownership to someone else. Just create an issue or discussion and I'll get the transfer done.
 
 This Obsidian plugin will rollover any incomplete todo items from the previous daily note (could be yesterday, or a week ago) to today. This is triggered automatically when a new daily note is created via the internal `Daily notes` plugin, or the `Periodic Notes` plugin., It can also be run as a command from the Command Palette.
 
