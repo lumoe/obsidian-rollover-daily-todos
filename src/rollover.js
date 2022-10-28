@@ -1,4 +1,5 @@
-import { Notice, getDailyNoteSettings, getAllDailyNotes, getDailyNote } from './obsidianHelpers'
+import { Notice } from 'obsidian';
+import { getDailyNoteSettings, getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface'
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
