@@ -87,8 +87,7 @@ function createRepresentationFromHeadings(headings) {
 }
 */
 
-// undoHistory & undoHistoryTime are not referenced but are mutated
-export async function rollover(app, settings, undoHistory, undoHistoryTime, file = undefined) {
+export async function rollover(app, settings, file = undefined) {
   /*** First we check if the file created is actually a valid daily note ***/
   const { folder, format } = getDailyNoteSettings()
   let ignoreCreationTime = false
@@ -232,7 +231,10 @@ export async function rollover(app, settings, undoHistory, undoHistoryTime, file
     if (message.length > 0) {
       new Notice(message, 4000 + (message.length * 3))
     }
-    undoHistoryTime = new Date()
-    undoHistory = [undoHistoryInstance]
+
+    return {
+      undoHistoryTime: new Date(),
+      undoHistory: [undoHistoryInstance]
+    }
   }
 }

@@ -19,19 +19,26 @@ export default class RolloverTodosPlugin extends Plugin {
 
   async onload() {
     await this.loadSettings()
+
     this.undoHistory = []
     this.undoHistoryTime = new Date()
 
     this.addSettingTab(new RolloverSettingTab(this.app, this))
 
     this.registerEvent(this.app.vault.on('create', async (file) => {
-      rollover(this.app, this.settings, this.undoHistory, this.undoHistoryTime, file)
+      const result = await rollover(this.app, this.settings, file)
+      this.undoHistoryTime = result?.undoHistoryTime;
+      this.undoHistory = result?.undoHistory;
     }))
 
     this.addCommand({
       id: "obsidian-rollover-daily-todos-rollover",
       name: "Rollover Todos Now",
-      callback: () => rollover(this.app, this.settings, this.undoHistory, this.undoHistoryTime)
+      callback: async () => {
+        const { undoHistoryTime, undoHistory } = await rollover(this.app, this.settings)
+        this.undoHistoryTime = undoHistoryTime;
+        this.undoHistory = undoHistory;
+      }
     })
 
     this.addCommand({
