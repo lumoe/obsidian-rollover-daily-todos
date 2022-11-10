@@ -71,17 +71,17 @@ export default class RolloverTodosPlugin extends Plugin {
     const todayMoment = moment()
     let dailyNotesTodayOrEarlier = []
     dailyNoteFiles.forEach(file => {
-      if (this.#getFileMoment(file, folder, format).isSameOrBefore(todayMoment, 'day')) {
+      if (this.getFileMoment(file, folder, format).isSameOrBefore(todayMoment, 'day')) {
         dailyNotesTodayOrEarlier.push(file)
       }
     })
 
     // sort by date
-    const sorted = dailyNotesTodayOrEarlier.sort((a, b) => this.#getFileMoment(b, folder, format).valueOf() - this.#getFileMoment(a, folder, format).valueOf());
+    const sorted = dailyNotesTodayOrEarlier.sort((a, b) => this.getFileMoment(b, folder, format).valueOf() - this.getFileMoment(a, folder, format).valueOf());
     return sorted[1];
   }
 
-  #getFileMoment(file, folder, format) {
+  getFileMoment(file, folder, format) {
     const path = file.path.replace(`${folder}/`, '').replace(`.${file.extension}`, '')
     return moment(path, format)
   }
@@ -123,7 +123,9 @@ export default class RolloverTodosPlugin extends Plugin {
     // is today's daily note
     const today = new Date();
     const todayFormatted = window.moment(today).format(format);
-    const filePathConstructed = `${folder}/${todayFormatted}.${file.extension}`;
+    const filePathConstructed = `${folder}${
+      folder == "" ? "" : "/"
+    }${todayFormatted}.${file.extension}`;
     if (filePathConstructed !== file.path) return;
 
     // was just created
