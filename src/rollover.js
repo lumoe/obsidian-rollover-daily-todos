@@ -13,8 +13,7 @@ function isDailyNotesEnabled(app) {
   return dailyNotesEnabled || periodicNotesEnabled;
 }
 
-function getLastDailyNote(vault) {
-  const { moment } = window
+function getLastDailyNote(moment, vault) {
   const { folder, format } = getDailyNoteSettings();
 
   // get all notes in directory that aren't null
@@ -26,17 +25,17 @@ function getLastDailyNote(vault) {
   const todayMoment = moment()
   let dailyNotesTodayOrEarlier = []
   dailyNoteFiles.forEach(file => {
-    if (getFileMoment(file, folder, format).isSameOrBefore(todayMoment, 'day')) {
+    if (getFileMoment(moment, file, folder, format).isSameOrBefore(todayMoment, 'day')) {
       dailyNotesTodayOrEarlier.push(file)
     }
   })
 
   // sort by date
-  const sorted = dailyNotesTodayOrEarlier.sort((a, b) => getFileMoment(b, folder, format).valueOf() - getFileMoment(a, folder, format).valueOf());
+  const sorted = dailyNotesTodayOrEarlier.sort((a, b) => getFileMoment(moment, b, folder, format).valueOf() - getFileMoment(moment, a, folder, format).valueOf());
   return sorted[1];
 }
 
-function getFileMoment(file, folder, format) {
+function getFileMoment(moment, file, folder, format) {
   const path = file.path.replace(`${folder}/`, '').replace(`.${file.extension}`, '')
   return moment(path, format)
 }
@@ -87,7 +86,7 @@ function createRepresentationFromHeadings(headings) {
 }
 */
 
-export async function rollover(app, settings, file = undefined) {
+export async function rollover(moment, app, settings, file = undefined) {
   /*** First we check if the file created is actually a valid daily note ***/
   const { folder, format } = getDailyNoteSettings()
   let ignoreCreationTime = false
@@ -95,7 +94,7 @@ export async function rollover(app, settings, file = undefined) {
   // Rollover can be called, but we need to get the daily file
   if (file == undefined) {
     const allDailyNotes = getAllDailyNotes()
-    file = getDailyNote(window.moment(), allDailyNotes)
+    file = getDailyNote(moment(), allDailyNotes)
     ignoreCreationTime = true
   }
   if (!file) return;
@@ -105,7 +104,7 @@ export async function rollover(app, settings, file = undefined) {
 
   // is today's daily note
   const today = new Date();
-  const todayFormatted = window.moment(today).format(format);
+  const todayFormatted = moment(today).format(format);
   const filePathConstructed = `${folder}/${todayFormatted}.${file.extension}`;
   if (filePathConstructed !== file.path) return;
 
