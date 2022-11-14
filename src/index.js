@@ -45,6 +45,7 @@ export default class RolloverTodosPlugin extends Plugin {
       deleteOnComplete: false,
       removeEmptyTodos: false,
       rolloverChildren: false,
+      insertBelowHR: false,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -194,8 +195,8 @@ export default class RolloverTodosPlugin extends Plugin {
         10000
       );
     } else {
-      const { templateHeading, deleteOnComplete, removeEmptyTodos } =
-        this.settings;
+      const { templateHeading, deleteOnComplete, removeEmptyTodos, insertBelowHR } =
+          this.settings;
 
       // check if there is a daily note from yesterday
       const lastDailyNote = this.getLastDailyNote();
@@ -259,10 +260,11 @@ export default class RolloverTodosPlugin extends Plugin {
 
         // If template heading is selected, try to rollover to template heading
         if (templateHeadingSelected) {
-          const contentAddedToHeading = dailyNoteContent.replace(
-            templateHeading,
-            `${templateHeading}${todos_todayString}`
-          );
+          let replacePattern = templateHeading
+          if (insertBelowHR) {
+            replacePattern += "(\n\-\-\-)*"
+          }
+          const contentAddedToHeading = dailyNoteContent.replace(new RegExp(`(${replacePattern})`, "g"), "\$1"+todos_todayString)
           if (contentAddedToHeading == dailyNoteContent) {
             templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading}' in today's daily not. Rolling todos to end of file.`;
           } else {
