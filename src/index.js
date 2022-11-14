@@ -64,42 +64,29 @@ export default class RolloverTodosPlugin extends Plugin {
     return dailyNotesEnabled || periodicNotesEnabled;
   }
 
-  getLastDailyNote() {
-    const { moment } = window;
-    let { folder, format } = getDailyNoteSettings();
-
-    folder = this.getCleanFolder(folder);
-    folder = folder.length === 0 ? folder : folder + "/";
-
-    const dailyNoteRegexMatch = new RegExp("^" + folder + "(.*).md$");
-    const todayMoment = moment();
+  getLastDailyNote(file) {
+    const { folder, format } = getDailyNoteSettings();
 
     // get all notes in directory that aren't null
-    const dailyNoteFiles = this.app.vault
-      .getMarkdownFiles()
-      .filter((file) => file.path.startsWith(folder))
-      .filter((file) =>
-        moment(
-          file.path.replace(dailyNoteRegexMatch, "$1"),
-          format,
-          true
-        ).isValid()
-      )
-      .filter((file) => file.basename)
-      .filter((file) =>
-        this.getFileMoment(file, folder, format).isSameOrBefore(
+    const dailyNoteFiles = getAllDailyNotes()
+
+    // remove notes that are from the future
+    const todayMoment = moment();
+    const dailyNotesTodayOrEarlier = dailyNoteFiles.filter(
+      (file) =>
+        this.getFileMoment(file, folder, format).isBefore(
           todayMoment,
           "day"
         )
       );
 
     // sort by date
-    const sorted = dailyNoteFiles.sort(
-      (a, b) =>
-        this.getFileMoment(b, folder, format).valueOf() -
-        this.getFileMoment(a, folder, format).valueOf()
+    const sorted = dailyNotesTodayOrEarlier.sort(
+        (a, b) =>
+            this.getFileMoment(b, folder, format).valueOf() -
+            this.getFileMoment(a, folder, format).valueOf()
     );
-    return sorted[1];
+    return sorted[0];
   }
 
   getFileMoment(file, folder, format) {
@@ -156,34 +143,21 @@ export default class RolloverTodosPlugin extends Plugin {
 
   async rollover(file = undefined) {
     /*** First we check if the file created is actually a valid daily note ***/
-    let { folder, format } = getDailyNoteSettings();
-    let ignoreCreationTime = false;
+    const { folder, _ } = getDailyNoteSettings();
+    const ignoreCreationTime = file === undefined;
 
     // Rollover can be called, but we need to get the daily file
-    if (file == undefined) {
+    if (ignoreCreationTime) {
       const allDailyNotes = getAllDailyNotes();
       file = getDailyNote(window.moment(), allDailyNotes);
-      ignoreCreationTime = true;
     }
-    if (!file) return;
 
-    folder = this.getCleanFolder(folder);
-
-    // is a daily note
-    if (!file.path.startsWith(folder)) return;
-
-    // is today's daily note
-    const today = new Date();
-    const todayFormatted = window.moment(today).format(format);
-    const filePathConstructed = `${folder}${
-      folder == "" ? "" : "/"
-    }${todayFormatted}.${file.extension}`;
-    if (filePathConstructed !== file.path) return;
+    if (!file || !file.stat || !file.path.startsWith(folder)) return;
 
     // was just created
     if (
-      today.getTime() - file.stat.ctime > MAX_TIME_SINCE_CREATION &&
-      !ignoreCreationTime
+        !ignoreCreationTime &&
+        ((new Date()).getTime() - file.stat.ctime > MAX_TIME_SINCE_CREATION)
     )
       return;
 
@@ -198,7 +172,7 @@ export default class RolloverTodosPlugin extends Plugin {
         this.settings;
 
       // check if there is a daily note from yesterday
-      const lastDailyNote = this.getLastDailyNote();
+      const lastDailyNote = this.getLastDailyNote(file);
       if (!lastDailyNote) return;
 
       // TODO: Rollover to subheadings (optional)
