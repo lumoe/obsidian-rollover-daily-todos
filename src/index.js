@@ -124,7 +124,7 @@ export default class RolloverTodosPlugin extends Plugin {
     const today = new Date();
     const todayFormatted = window.moment(today).format(format);
     const filePathConstructed = `${folder}${
-      folder == "" ? "" : "/"
+      folder == "" ? "/" : ""
     }${todayFormatted}.${file.extension}`;
     if (filePathConstructed !== file.path) return;
 
