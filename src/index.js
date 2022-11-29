@@ -60,7 +60,9 @@ export default class RolloverTodosPlugin extends Plugin {
 
   getLastDailyNote() {
     const { moment } = window
-    const { folder, format } = getDailyNoteSettings();
+    let { folder, format } = getDailyNoteSettings();
+
+    folder = this.getCleanFolder(folder);
 
     // get all notes in directory that aren't null
     const dailyNoteFiles = this.app.vault.getAllLoadedFiles()
@@ -104,9 +106,23 @@ export default class RolloverTodosPlugin extends Plugin {
     }
   }
 
+  getCleanFolder(folder) {
+    // Check if user defined folder with root `/` e.g. `/dailies`
+    if (folder.startsWith("/")) {
+      folder = folder.substring(1);
+    }
+
+    // Check if user defined folder with trailing `/` e.g. `dailies/`
+    if (folder.endsWith("/")) {
+      folder = folder.substring(0, folder.length - 1);
+    }
+
+    return folder;
+  }
+
   async rollover(file = undefined) {
     /*** First we check if the file created is actually a valid daily note ***/
-    const { folder, format } = getDailyNoteSettings()
+    let { folder, format } = getDailyNoteSettings()
     let ignoreCreationTime = false
 
     // Rollover can be called, but we need to get the daily file
@@ -117,6 +133,8 @@ export default class RolloverTodosPlugin extends Plugin {
     }
     if (!file) return;
 
+    folder = this.getCleanFolder(folder);
+
     // is a daily note
     if (!file.path.startsWith(folder)) return;
 
@@ -124,7 +142,7 @@ export default class RolloverTodosPlugin extends Plugin {
     const today = new Date();
     const todayFormatted = window.moment(today).format(format);
     const filePathConstructed = `${folder}${
-      folder == "" ? "/" : ""
+      folder == "" ? "" : "/"
     }${todayFormatted}.${file.extension}`;
     if (filePathConstructed !== file.path) return;
 
