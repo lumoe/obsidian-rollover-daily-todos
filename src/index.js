@@ -104,6 +104,7 @@ export default class RolloverTodosPlugin extends Plugin {
     }
   }
 
+
   async rollover(file = undefined) {
     /*** First we check if the file created is actually a valid daily note ***/
     const { folder, format } = getDailyNoteSettings()
@@ -170,17 +171,18 @@ export default class RolloverTodosPlugin extends Plugin {
       if (removeEmptyTodos) {
         todos_yesterday.forEach((line, i) => {
           const trimmedLine = (line || "").trim()
-          if ((trimmedLine != '- [ ]') && (trimmedLine != '- [  ]')) {
+          if ((line != '- [ ]') && (trimmedLine != '- [  ]')) {
             if (preserveIndentation){
               // Get index of first non-whitespace character
               // (Equivalent to counting)
-              indentation = line.search(/\S|$/);
+              first_character_index = line.search(/\S|$/);
+              leading_whitespace = line.substring(0, first_character_index);
             }else{
-              indentation = 0
+              leading_whitespace = ""
             }
 
             todos_today.push({
-              indentation: indentation,
+              leading_whitespace: leading_whitespace,
               content:line
             })
             todosAdded++
@@ -204,7 +206,7 @@ export default class RolloverTodosPlugin extends Plugin {
         }
         todos_todayString = `\n`
         todos_today.forEach(element => {
-          todosAddedString = todosAddedString + ` `*element.indentation + element.content + `\n`
+          todosAddedString = todosAddedString + element.leading_whitespace + element.content + `\n`
         });
 
         // If template heading is selected, try to rollover to template heading
