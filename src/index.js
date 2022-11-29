@@ -167,7 +167,7 @@ export default class RolloverTodosPlugin extends Plugin {
       // Potentially filter todos from yesterday for today
       let todosAdded = 0
       let emptiesToNotAddToTomorrow = 0
-      let todos_today = removeEmptyTodos ? [] : todos_yesterday 
+      let todos_today = !removeEmptyTodos ? todos_yesterday : []
       if (removeEmptyTodos) {
         todos_yesterday.forEach((line, i) => {
           const trimmedLine = (line || "").trim()
