@@ -76,17 +76,13 @@ export default class RolloverTodosPlugin extends Plugin {
 
     // remove notes that are from the future
     const todayMoment = moment();
-    let dailyNotesTodayOrEarlier = [];
-    dailyNoteFiles.forEach((file) => {
-      if (
+    const dailyNotesTodayOrEarlier = dailyNoteFiles.filter(
+      (file) =>
         this.getFileMoment(file, folder, format).isSameOrBefore(
           todayMoment,
           "day"
-        )
-      ) {
-        dailyNotesTodayOrEarlier.push(file);
-      }
-    });
+        ) && moment(file.basename, format, true).isValid()
+    );
 
     // sort by date
     const sorted = dailyNotesTodayOrEarlier.sort(
