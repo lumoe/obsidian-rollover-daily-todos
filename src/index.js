@@ -116,11 +116,11 @@ export default class RolloverTodosPlugin extends Plugin {
   }
 
   async getAllUnfinishedTodos(file) {
-    const content = await this.app.vault.read(file);
-    const contentLines = content.split(/\r?\n|\r|\n/g);
+    const dn = await this.app.vault.read(file);
+    const dnLines = dn.split(/\r?\n|\r|\n/g);
 
     return getTodos({
-      lines: contentLines,
+      lines: dnLines,
       withChildren: this.settings.rolloverChildren,
     });
   }
