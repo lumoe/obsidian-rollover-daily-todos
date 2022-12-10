@@ -32,6 +32,8 @@ const isChildof = (parentLinum, linum, lines) => {
   return getIndentation(linum, lines) > getIndentation(parentLinum, lines);
 };
 
+// TODO: Construct class and add lines as member
+// (so that we don't have to pass it around the whole time)
 const getIndentation = (linum, lines) => {
   return lines[linum].search(/\S/);
 };
@@ -44,10 +46,8 @@ export const getTodos = ({ lines, withChildren = false }) => {
       todos.push(line);
       if (withChildren && hasChildren(linum, lines)) {
         const cs = getChildren(linum, lines);
-        cs.forEach((c) => {
-          todos.push(c);
-          linum++;
-        });
+        todos = [...todos, ...cs];
+        linum += cs.length;
       }
     }
   }
