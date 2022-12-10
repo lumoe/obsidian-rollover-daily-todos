@@ -44,6 +44,7 @@ export default class RolloverTodosPlugin extends Plugin {
       templateHeading: "none",
       deleteOnComplete: false,
       removeEmptyTodos: false,
+      rolloverChildren: false,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -118,10 +119,9 @@ export default class RolloverTodosPlugin extends Plugin {
     const content = await this.app.vault.read(file);
     const contentLines = content.split(/\r?\n|\r|\n/g);
 
-    // TODO: withChildren should read from settings!
     return getTodos({
       lines: contentLines,
-      withChildren: true,
+      withChildren: this.settings.rolloverChildren,
     });
   }
 
