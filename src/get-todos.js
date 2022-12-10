@@ -1,55 +1,78 @@
-const isTodo = (s) => {
-  const r = /\s*- \[ \].*/g;
-  return r.test(s);
-};
+class TodoParser {
+  // List of strings that include the Markdown content
+  #lines;
 
-const hasChildren = (linum, lines) => {
-  if (linum + 1 >= lines.length) {
+  // Boolean that encodes whether nested items should be rolled over
+  #withChildren;
+
+  constructor(lines, withChildren) {
+    this.#lines = lines;
+    this.#withChildren = withChildren;
+  }
+
+  // Returns true if string s is a todo-item
+  #isTodo(s) {
+    const r = /\s*- \[ \].*/g;
+    return r.test(s);
+  }
+
+  // Returns true if line after line-number `l` is a nested item
+  #hasChildren(l) {
+    if (l + 1 >= this.#lines.length) {
+      return false;
+    }
+    const indCurr = this.#getIndentation(l);
+    const indNext = this.#getIndentation(l + 1);
+    if (indNext > indCurr) {
+      return true;
+    }
     return false;
   }
-  const indCurr = getIndentation(linum, lines);
-  const indNext = getIndentation(linum + 1, lines);
-  if (indNext > indCurr) {
-    return true;
+
+  // Returns a list of strings that are the nested items after line `parentLinum`
+  #getChildren(parentLinum) {
+    const children = [];
+    let nextLinum = parentLinum + 1;
+    while (this.#isChildof(parentLinum, nextLinum)) {
+      children.push(this.#lines[nextLinum]);
+      nextLinum++;
+    }
+    return children;
   }
-  return false;
-};
 
-const getChildren = (parentLinum, lines) => {
-  const children = [];
-  let nextLinum = parentLinum + 1;
-  while (isChildof(parentLinum, nextLinum, lines)) {
-    children.push(lines[nextLinum]);
-    nextLinum++;
+  // Returns true if line `linum` has more indentation than line `parentLinum`
+  #isChildof(parentLinum, linum) {
+    if (parentLinum >= this.#lines.length || linum >= this.#lines.length) {
+      return false;
+    }
+    return this.#getIndentation(linum) > this.#getIndentation(parentLinum);
   }
-  return children;
-};
 
-const isChildof = (parentLinum, linum, lines) => {
-  if (parentLinum >= lines.length || linum >= lines.length) {
-    return false;
+  // Returns the number of whitespace-characters at beginning of string at line `l`
+  #getIndentation(l) {
+    return this.#lines[l].search(/\S/);
   }
-  return getIndentation(linum, lines) > getIndentation(parentLinum, lines);
-};
 
-// TODO: Construct class and add lines as member
-// (so that we don't have to pass it around the whole time)
-const getIndentation = (linum, lines) => {
-  return lines[linum].search(/\S/);
-};
-
-export const getTodos = ({ lines, withChildren = false }) => {
-  let todos = [];
-  for (let linum = 0; linum < lines.length; linum++) {
-    const line = lines[linum];
-    if (isTodo(line)) {
-      todos.push(line);
-      if (withChildren && hasChildren(linum, lines)) {
-        const cs = getChildren(linum, lines);
-        todos = [...todos, ...cs];
-        linum += cs.length;
+  // Returns a list of strings that represents all the todos along with there potential children
+  getTodos() {
+    let todos = [];
+    for (let l = 0; l < this.#lines.length; l++) {
+      const line = this.#lines[l];
+      if (this.#isTodo(line)) {
+        todos.push(line);
+        if (this.#withChildren && this.#hasChildren(l)) {
+          const cs = this.#getChildren(l);
+          todos = [...todos, ...cs];
+          l += cs.length;
+        }
       }
     }
+    return todos;
   }
-  return todos;
+}
+
+// Utility-function that acts as a thin wrapper around `TodoParser`
+export const getTodos = ({ lines, withChildren = false }) => {
+  const todoParser = new TodoParser(lines, withChildren);
+  return todoParser.getTodos();
 };
