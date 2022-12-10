@@ -4,8 +4,8 @@
   "description": "This Obsidian.md plugin rolls over incomplete TODOs from the previous daily note to today's daily note. (https://obsidian.md)",
   "main": "main.js",
   "scripts": {
-    "dev": "rollup --config rollup.config.js -w",
-    "build": "rollup --config rollup.config.js --environment BUILD:production",
+    "dev": "rollup -c -w",
+    "build": "rollup -c --environment BUILD:production",
     "test": "vitest"
   },
   "keywords": [],
