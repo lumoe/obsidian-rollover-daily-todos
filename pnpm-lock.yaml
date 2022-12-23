@@ -5,6 +5,7 @@ specifiers:
   '@rollup/plugin-node-resolve': ^9.0.0
   obsidian: https://github.com/obsidianmd/obsidian-api/tarball/master
   obsidian-daily-notes-interface: ^0.9.2
+  prettier: ^2.8.1
   rollup: ^2.32.1
 
 dependencies:
@@ -14,6 +15,7 @@ devDependencies:
   '@rollup/plugin-commonjs': 15.1.0_rollup@2.79.1
   '@rollup/plugin-node-resolve': 9.0.0_rollup@2.79.1
   obsidian: '@github.com/obsidianmd/obsidian-api/tarball/master'
+  prettier: 2.8.1
   rollup: 2.79.1
 
 packages:
@@ -205,7 +207,7 @@ packages:
     resolution: {integrity: sha512-PILoRtZUB5wEeGnDQAPMlkVlXwDYoxkLR8Wl4STU2zLNwhcq9kKvQexiXi7sfjGlpTnL+LeAOfEVWyeVndneKg==}
     hasBin: true
     dependencies:
-      obsidian: github.com/obsidianmd/obsidian-api/cb7d2d94ecce1f668a2eb99901d8c26267e56eaf
+      obsidian: github.com/obsidianmd/obsidian-api/38dd22168d2925086371bfc59e36fd9121527a39
       tslib: 2.1.0
     transitivePeerDependencies:
       - '@codemirror/state'
@@ -230,6 +232,12 @@ packages:
   /picomatch/2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
+    dev: true
+
+  /prettier/2.8.1:
+    resolution: {integrity: sha512-lqGoSJBQNJidqCHE80vqZJHWHRFoNYsSpP9AjFhlhi9ODCJA541svILes/+/1GM3VaL/abZi7cpFzOpdR9UPKg==}
+    engines: {node: '>=10.13.0'}
+    hasBin: true
     dev: true
 
   /resolve/1.22.1:
@@ -270,7 +278,7 @@ packages:
   '@github.com/obsidianmd/obsidian-api/tarball/master':
     resolution: {tarball: https://github.com/obsidianmd/obsidian-api/tarball/master}
     name: obsidian
-    version: 1.1.1
+    version: 1.1.7
     peerDependencies:
       '@codemirror/state': ^6.0.0
       '@codemirror/view': ^6.0.0
@@ -279,10 +287,10 @@ packages:
       moment: 2.29.4
     dev: true
 
-  github.com/obsidianmd/obsidian-api/cb7d2d94ecce1f668a2eb99901d8c26267e56eaf:
-    resolution: {tarball: https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/cb7d2d94ecce1f668a2eb99901d8c26267e56eaf}
+  github.com/obsidianmd/obsidian-api/38dd22168d2925086371bfc59e36fd9121527a39:
+    resolution: {tarball: https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/38dd22168d2925086371bfc59e36fd9121527a39}
     name: obsidian
-    version: 1.1.1
+    version: 1.1.7
     peerDependencies:
       '@codemirror/state': ^6.0.0
       '@codemirror/view': ^6.0.0
