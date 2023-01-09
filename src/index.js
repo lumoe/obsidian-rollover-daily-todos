@@ -9,32 +9,55 @@ import RolloverSettingTab from "./ui/RolloverSettingTab";
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
-/* Just some boilerplate code for recursively going through subheadings for later
-function createRepresentationFromHeadings(headings) {
-  let i = 0;
-  const tags = [];
+/* 
+TestCases we'd like to cover
 
-  (function recurse(depth) {
-    let unclosedLi = false;
-    while (i < headings.length) {
-      const [hashes, data] = headings[i].split("# ");
-      if (hashes.length < depth) {
-        break;
-      } else if (hashes.length === depth) {
-        if (unclosedLi) tags.push('</li>');
-        unclosedLi = true;
-        tags.push('<li>', data);
-        i++;
-      } else {
-        tags.push('<ul>');
-        recurse(depth + 1);
-        tags.push('</ul>');
-      }
-    }
-    if (unclosedLi) tags.push('</li>');
-  })(-1);
-  return tags.join('\n');
-}
+************************************ PREVIOUS *************************************
+
+# Journal 2021-12-23
+
+- some topic
+	- some subinfo
+  - bla bla bla
+
+## TODOs
+- [ ] A todo with some content below
+	- --> [a link](https://example.com)
+	- some information
+	- [ ] a Sub-todo
+		- with a sub-content-block, that is followed by an empty line with the wrong level
+
+	- [ ] a sub-todo without a sub-content-block, followed by a line with some white space
+		
+- [ ]   A Test-Todo with a tab as separator
+- [ ] Test-Todo without extra block
+- [ ] Test-Todo at the end of the line
+This is NOT a todo. It's in the middle, followed by an empty line
+
+This is after the empty line
+* [ ] This is also a todo, but with asterisk instead of a dash
+* --> NOT a todo [a link](https://example.com)
+* [ ] Test-Todo at the end of the file
+
+
+************************************ EXPECTED **************************************
+
+# Journal 2021-12-24
+
+## TODOs
+- [ ] A todo with some content below
+	- --> [a link](https://example.com)
+	- some information
+	- [ ] a Sub-todo
+		- with a sub-content-block, that is followed by an empty line with the wrong level
+	- [ ] a sub-todo without a sub-content-block, followed by a line with some white space
+		
+- [ ]   A Test-Todo with a tab as separator
+- [ ] Test-Todo without extra block
+- [ ] Test-Todo at the end of the line
+* [ ] This is also a todo, but with asterisk instead of a dash
+* [ ] Test-Todo at the end of the file
+
 */
 
 export default class RolloverTodosPlugin extends Plugin {
@@ -43,6 +66,7 @@ export default class RolloverTodosPlugin extends Plugin {
       templateHeading: "none",
       deleteOnComplete: false,
       removeEmptyTodos: false,
+      includeSubContent: true,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -91,6 +115,72 @@ export default class RolloverTodosPlugin extends Plugin {
         this.getFileMoment(a, folder, format).valueOf()
     );
     return sorted[1];
+  }
+
+  async handleUnfinishedTodosWithBlocks(file) {
+    const content = await this.app.vault.read(file);
+
+    const lines = content.split("\n")
+    let inFrontmatter = false
+    let curTodo = undefined
+    let curLevel = 0
+    const todos = []
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      const level = line.match(/^(\t*)/)[1].length
+
+      const todoMatch = line.match(/^(\t*)[-*]\s\[ \]\s.*/)
+      const frontmatterMatch = line.match(/^---*.*$/)
+
+      // we skip the frontmatter for rolling over todos
+      if (i === 0 && frontmatterMatch) {
+        inFrontmatter = true
+        continue
+      }
+      if (inFrontmatter) {
+        if (frontmatterMatch) {
+          inFrontmatter = false
+        }
+        continue
+      }
+
+      if (curTodo) {
+        // we have a current todo and the line is inside its block OR it's just an empty line
+        // --> add it to the current todo
+        const justWhitespace = line.match(/^\s*\n?$/)
+        if (level > curLevel || justWhitespace) {
+          curTodo += line + (justWhitespace ? '' : "\n")
+          continue
+        }
+
+        // we have a current todo and another line starts on the same level
+        // --> end the current block and decide if the line is a todo
+        if (level <= curLevel) {
+          todos.push(curTodo.trimEnd())
+          if (todoMatch) {
+            curTodo = line + "\n"
+            curLevel = level
+          } else {
+            curTodo = undefined
+            curLevel = 0
+          }
+          continue
+        }
+      }
+
+      // we don't have a current todo, but the line is a todo
+      if (!curTodo && todoMatch) {
+        curTodo = line + "\n"
+        curLevel = level
+      }
+    }
+
+    // the last line might have contained a todo that we need to add as well
+    if (curTodo) {
+      todos.push(curTodo)
+    }
+
+    return todos
   }
 
   getFileMoment(file, folder, format) {
@@ -185,7 +275,7 @@ export default class RolloverTodosPlugin extends Plugin {
         10000
       );
     } else {
-      const { templateHeading, deleteOnComplete, removeEmptyTodos } =
+      const { templateHeading, deleteOnComplete, removeEmptyTodos, includeSubContent } =
         this.settings;
 
       // check if there is a daily note from yesterday
@@ -195,8 +285,11 @@ export default class RolloverTodosPlugin extends Plugin {
       // TODO: Rollover to subheadings (optional)
       //this.sortHeadersIntoHeirarchy(lastDailyNote)
 
-      // get unfinished todos from yesterday, if exist
-      let todos_yesterday = await this.getAllUnfinishedTodos(lastDailyNote);
+      // get unfinished todos from yesterday, if exist  
+      let todos_yesterday = includeSubContent ?
+        await this.handleUnfinishedTodosWithBlocks(lastDailyNote) :
+        await this.getAllUnfinishedTodos(lastDailyNote);
+
       if (todos_yesterday.length == 0) {
         console.log(
           `rollover-daily-todos: 0 todos found in ${lastDailyNote.basename}.md`
