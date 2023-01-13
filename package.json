@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "rollup -c -w",
     "build": "rollup -c --environment BUILD:production",
-    "test": "vitest"
+    "test": "vitest",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "Matthew Sessions",
@@ -16,7 +17,8 @@
     "@rollup/plugin-node-resolve": "^9.0.0",
     "obsidian": "https://github.com/obsidianmd/obsidian-api/tarball/master",
     "rollup": "^2.32.1",
-    "vitest": "^0.25.7"
+    "vitest": "^0.25.7",
+    "prettier": "^2.8.1"
   },
   "dependencies": {
     "obsidian-daily-notes-interface": "^0.9.2"
