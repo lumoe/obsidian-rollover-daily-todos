@@ -1,4 +1,4 @@
-import { Notice, Plugin, Setting, PluginSettingTab } from "obsidian";
+import { Notice, Plugin } from "obsidian";
 import {
   getDailyNoteSettings,
   getAllDailyNotes,
@@ -6,6 +6,7 @@ import {
 } from "obsidian-daily-notes-interface";
 import UndoModal from "./ui/UndoModal";
 import RolloverSettingTab from "./ui/RolloverSettingTab";
+import { getTodos } from "./get-todos";
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
@@ -43,6 +44,7 @@ export default class RolloverTodosPlugin extends Plugin {
       templateHeading: "none",
       deleteOnComplete: false,
       removeEmptyTodos: false,
+      rolloverChildren: false,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -110,13 +112,13 @@ export default class RolloverTodosPlugin extends Plugin {
   }
 
   async getAllUnfinishedTodos(file) {
-    const contents = await this.app.vault.read(file);
-    const unfinishedTodosRegex = /\t*- \[ \].*/g;
-    const unfinishedTodos = Array.from(
-      contents.matchAll(unfinishedTodosRegex)
-    ).map(([todo]) => todo);
+    const dn = await this.app.vault.read(file);
+    const dnLines = dn.split(/\r?\n|\r|\n/g);
 
-    return unfinishedTodos;
+    return getTodos({
+      lines: dnLines,
+      withChildren: this.settings.rolloverChildren,
+    });
   }
 
   async sortHeadersIntoHeirarchy(file) {

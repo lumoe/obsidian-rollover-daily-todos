@@ -4,8 +4,9 @@
   "description": "This Obsidian.md plugin rolls over incomplete TODOs from the previous daily note to today's daily note. (https://obsidian.md)",
   "main": "main.js",
   "scripts": {
-    "dev": "rollup --config rollup.config.js -w",
-    "build": "rollup --config rollup.config.js --environment BUILD:production",
+    "dev": "rollup -c -w",
+    "build": "rollup -c --environment BUILD:production",
+    "test": "vitest",
     "format": "prettier --write ."
   },
   "keywords": [],
@@ -16,6 +17,7 @@
     "@rollup/plugin-node-resolve": "^9.0.0",
     "obsidian": "https://github.com/obsidianmd/obsidian-api/tarball/master",
     "rollup": "^2.32.1",
+    "vitest": "^0.25.7",
     "prettier": "^2.8.1"
   },
   "dependencies": {
