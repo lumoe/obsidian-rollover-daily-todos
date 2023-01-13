@@ -77,7 +77,7 @@ export default class RolloverSettingTab extends PluginSettingTab {
     new Setting(this.containerEl)
       .setName("Roll over children of todos")
       .setDesc(
-        `By default, only the acutal todos are rolled over. If you add nested Markdown-elements beneath your todos, these are not rolled over but stay in place, possibly altering the logic of your previous note. This setting allows for also migrating the nested elements.`
+        `By default, only the actual todos are rolled over. If you add nested Markdown-elements beneath your todos, these are not rolled over but stay in place, possibly altering the logic of your previous note. This setting allows for also migrating the nested elements.`
       )
       .addToggle((toggle) =>
         toggle
