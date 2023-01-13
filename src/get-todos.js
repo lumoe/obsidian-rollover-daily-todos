@@ -12,7 +12,7 @@ class TodoParser {
 
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    const r = /\s*- \[ \].*/g;
+    const r = /\s*- \[[^xX-]\].*/g;
     return r.test(s);
   }
 
