@@ -1,52 +1,55 @@
-import { Setting, PluginSettingTab } from "obsidian";
-import { getDailyNoteSettings } from "obsidian-daily-notes-interface";
+import { Setting, PluginSettingTab, App } from "obsidian";
+import RolloverTodosPlugin, { DailyNoteSettings } from "src";
+import path from "path";
 
-export default class RolloverSettingTab extends PluginSettingTab {
-  constructor(app, plugin) {
+export class RolloverSettingTab extends PluginSettingTab {
+  plugin: RolloverTodosPlugin;
+
+  constructor(app: App, plugin: RolloverTodosPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
 
-  async getTemplateHeadings() {
-    const { template } = getDailyNoteSettings();
-    if (!template) return [];
-
-    let file = this.app.vault.getAbstractFileByPath(template);
-    if (file == null) {
-      file = this.app.vault.getAbstractFileByPath(template + ".md");
-    }
-
-    const templateContents = await this.app.vault.read(file);
-    const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(
-      ([heading]) => heading
-    );
-    return allHeadings;
+  getDailyNoteSettings(): DailyNoteSettings {
+    const { folder, format, template } =
+      // @ts-ignore
+      this.app.internalPlugins.getPluginById("daily-notes")?.instance
+        ?.options || {};
+    return {
+      format: format || "YYYY-MM-DD",
+      folder: path.basename(folder?.trim()) || "",
+      template: template?.trim() || "",
+    };
   }
 
   async display() {
-    const templateHeadings = await this.getTemplateHeadings();
+    const { containerEl } = this;
+    containerEl.empty();
 
-    this.containerEl.empty();
-    new Setting(this.containerEl)
-      .setName("Template heading")
-      .setDesc("Which heading from your template should the todos go under")
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOptions({
-            ...templateHeadings.reduce((acc, heading) => {
-              acc[heading] = heading;
-              return acc;
-            }, {}),
-            none: "None",
-          })
-          .setValue(this.plugin?.settings.templateHeading)
-          .onChange((value) => {
-            this.plugin.settings.templateHeading = value;
-            this.plugin.saveSettings();
-          })
-      );
+    containerEl.createEl("h2", { text: "Rollover Daily TODOs - Settings" });
 
-    new Setting(this.containerEl)
+    // Template Headers
+    const con = containerEl.createEl("div", { cls: "setting-item" });
+    const d = con.createEl("div", { cls: "setting-item-info" });
+    d.createEl("b", { text: "Template Headings", cls: "setting-item-name" });
+    d.createEl("div", {
+      text: "The headings from your daily-template that act as the source and target to roll over TODOs",
+      cls: "setting-item-description",
+    });
+
+    this.plugin.settings.headings.forEach((header, i) => {
+      new Setting(containerEl).setName(header.name).addToggle((toggle) => {
+        toggle.setValue(header.checked).onChange((v) => {
+          this.plugin.settings.headings[i].checked =
+            !this.plugin.settings.headings[i].checked;
+          this.plugin.saveSettings();
+        });
+      });
+    });
+
+    containerEl.createEl("div", { cls: "rollover-todos-spacer" });
+
+    new Setting(containerEl)
       .setName("Delete todos from previous day")
       .setDesc(
         `Once todos are found, they are added to Today's Daily Note. If successful, they are deleted from Yesterday's Daily note. Enabling this is destructive and may result in lost data. Keeping this disabled will simply duplicate them from yesterday's note and place them in the appropriate section. Note that currently, duplicate todos will be deleted regardless of what heading they are in, and which heading you choose from above.`
@@ -60,7 +63,7 @@ export default class RolloverSettingTab extends PluginSettingTab {
           })
       );
 
-    new Setting(this.containerEl)
+    new Setting(containerEl)
       .setName("Remove empty todos in rollover")
       .setDesc(
         `If you have empty todos, they will not be rolled over to the next day.`
@@ -74,7 +77,7 @@ export default class RolloverSettingTab extends PluginSettingTab {
           })
       );
 
-    new Setting(this.containerEl)
+    new Setting(containerEl)
       .setName("Roll over children of todos")
       .setDesc(
         `By default, only the acutal todos are rolled over. If you add nested Markdown-elements beneath your todos, these are not rolled over but stay in place, possibly altering the logic of your previous note. This setting allows for also migrating the nested elements.`

@@ -157,3 +157,63 @@ test("get todos doesn't add intermediate other elements", () => {
   ];
   expect(todos).toStrictEqual(result);
 });
+
+test("Nested completed todo-elements are not rolled over", () => {
+  // GIVEN
+  const lines = [
+    "- [ ] TODO",
+    "    - [ ] Next",
+    "    - [x] Completed stuff",
+    "    - some stuff",
+    "- [ ] Another one",
+    "    - [ ] More children",
+    "    - another child",
+    "        - [x] Another nested child",
+  ];
+
+  // WHEN
+  const todos = getTodos({ lines, withChildren: true });
+
+  // THEN
+  const result = [
+    "- [ ] TODO",
+    "    - [ ] Next",
+    "    - some stuff",
+    "- [ ] Another one",
+    "    - [ ] More children",
+    "    - another child",
+  ];
+  expect(todos).toStrictEqual(result);
+});
+
+test("Children of completed todo-elements are not rolled over", () => {
+  // GIVEN
+  const lines = [
+    "- [ ] TODO",
+    "    - [ ] Next",
+    "    - [x] Completed stuff",
+    "        - some stuff",
+    "- [ ] Another one",
+    "    - [ ] More children",
+    "    - another child",
+    "        - [x] Another nested child",
+    "- [x] This should not get rolled over",
+    "    - [ ] More children",
+    "    - another child",
+    "        - [x] Another nested child",
+  ];
+
+  // WHEN
+  const todos = getTodos({ lines, withChildren: true });
+
+  // THEN
+  const result = [
+    "- [ ] TODO",
+    "    - [ ] Next",
+    "- [ ] Another one",
+    "    - [ ] More children",
+    "    - another child",
+  ];
+
+  expect(todos).toStrictEqual(result);
+});
