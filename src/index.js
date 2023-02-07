@@ -344,7 +344,6 @@ export default class RolloverTodosPlugin extends Plugin {
 
     this.registerEvent(
       this.app.vault.on("create", async (file) => {
-        console.log("Rollover Todos triggered automatically");
         this.rollover(file);
       })
     );
@@ -353,7 +352,6 @@ export default class RolloverTodosPlugin extends Plugin {
       id: "obsidian-rollover-daily-todos-rollover",
       name: "Rollover Todos Now",
       callback: () => {
-        console.log("Rollover Todos Now triggered manually");
         this.rollover();
       },
     });
