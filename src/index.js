@@ -69,31 +69,26 @@ export default class RolloverTodosPlugin extends Plugin {
     let { folder, format } = getDailyNoteSettings();
 
     folder = this.getCleanFolder(folder);
+    const r = new RegExp("^" + folder + "/(.*).md$");
+    const todayMoment = moment();
 
     // get all notes in directory that aren't null
     const dailyNoteFiles = this.app.vault
-      .getAllLoadedFiles()
+      .getMarkdownFiles()
       .filter((file) => file.path.startsWith(folder))
       .filter((file) =>
-        moment(
-          file.path.replace(folder + "/", "").replace(".md", ""), // TODO: Clean up this string-replacement-code
-          format,
-          true
-        ).isValid()
+        moment(file.path.replace(r, "$1"), format, true).isValid()
       )
-      .filter((file) => file.basename != null);
-
-    // remove notes that are from the future
-    const todayMoment = moment();
-    const dailyNotesTodayOrEarlier = dailyNoteFiles.filter((file) =>
-      this.getFileMoment(file, folder, format).isSameOrBefore(
-        todayMoment,
-        "day"
-      )
-    );
+      .filter((file) => file.basename)
+      .filter((file) =>
+        this.getFileMoment(file, folder, format).isSameOrBefore(
+          todayMoment,
+          "day"
+        )
+      );
 
     // sort by date
-    const sorted = dailyNotesTodayOrEarlier.sort(
+    const sorted = dailyNoteFiles.sort(
       (a, b) =>
         this.getFileMoment(b, folder, format).valueOf() -
         this.getFileMoment(a, folder, format).valueOf()
