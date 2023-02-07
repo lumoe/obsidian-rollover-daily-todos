@@ -74,16 +74,22 @@ export default class RolloverTodosPlugin extends Plugin {
     const dailyNoteFiles = this.app.vault
       .getAllLoadedFiles()
       .filter((file) => file.path.startsWith(folder))
+      .filter((file) =>
+        moment(
+          file.path.replace(folder + "/", "").replace(".md", ""), // TODO: Clean up this string-replacement-code
+          format,
+          true
+        ).isValid()
+      )
       .filter((file) => file.basename != null);
 
     // remove notes that are from the future
     const todayMoment = moment();
-    const dailyNotesTodayOrEarlier = dailyNoteFiles.filter(
-      (file) =>
-        this.getFileMoment(file, folder, format).isSameOrBefore(
-          todayMoment,
-          "day"
-        ) && moment(file.basename, format, true).isValid()
+    const dailyNotesTodayOrEarlier = dailyNoteFiles.filter((file) =>
+      this.getFileMoment(file, folder, format).isSameOrBefore(
+        todayMoment,
+        "day"
+      )
     );
 
     // sort by date
@@ -192,17 +198,19 @@ export default class RolloverTodosPlugin extends Plugin {
 
       // check if there is a daily note from yesterday
       const lastDailyNote = this.getLastDailyNote();
-      if (lastDailyNote == null) return;
+      if (!lastDailyNote) return;
 
       // TODO: Rollover to subheadings (optional)
       //this.sortHeadersIntoHeirarchy(lastDailyNote)
 
       // get unfinished todos from yesterday, if exist
       let todos_yesterday = await this.getAllUnfinishedTodos(lastDailyNote);
+
+      console.log(
+        `rollover-daily-todos: ${todos_yesterday.length} todos found in ${lastDailyNote.basename}.md`
+      );
+
       if (todos_yesterday.length == 0) {
-        console.log(
-          `rollover-daily-todos: 0 todos found in ${lastDailyNote.basename}.md`
-        );
         return;
       }
 
@@ -341,6 +349,7 @@ export default class RolloverTodosPlugin extends Plugin {
 
     this.registerEvent(
       this.app.vault.on("create", async (file) => {
+        console.log("Rollover Todos triggered automatically");
         this.rollover(file);
       })
     );
@@ -348,7 +357,10 @@ export default class RolloverTodosPlugin extends Plugin {
     this.addCommand({
       id: "obsidian-rollover-daily-todos-rollover",
       name: "Rollover Todos Now",
-      callback: () => this.rollover(),
+      callback: () => {
+        console.log("Rollover Todos Now triggered manually");
+        this.rollover();
+      },
     });
 
     this.addCommand({
