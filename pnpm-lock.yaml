@@ -8,7 +8,8 @@ specifiers:
   obsidian: latest
   prettier: ^2.8.1
   rimraf: ^3.0.2
-  tslib: ^2.4.1
+  tslib: ^2.5.0
+  typescript: ^4.9.5
   vite: ^4.0.3
   vitest: ^0.25.7
 
@@ -20,7 +21,8 @@ devDependencies:
   obsidian: 1.1.1_aobhhl3zvvoky55b4kv3h5xntq
   prettier: 2.8.1
   rimraf: 3.0.2
-  tslib: 2.4.1
+  tslib: 2.5.0
+  typescript: 4.9.5
   vite: 4.0.3
   vitest: 0.25.7
 
@@ -774,13 +776,19 @@ packages:
     engines: {node: '>=14.0.0'}
     dev: true
 
-  /tslib/2.4.1:
-    resolution: {integrity: sha512-tGyy4dAjRIEwI7BzsB0lynWgOpfqjUdq91XXAlIWD2OwKBH7oCl/GZG/HT4BOHrTlPMOASlMQ7veyTqpmRcrNA==}
+  /tslib/2.5.0:
+    resolution: {integrity: sha512-336iVw3rtn2BUK7ORdIAHTyxHGRIHVReokCR3XjbckJMK7ms8FysBfhLR8IXnAgy7T0PTPNBWKiH514FOW/WSg==}
     dev: true
 
   /type-detect/4.0.8:
     resolution: {integrity: sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==}
     engines: {node: '>=4'}
+    dev: true
+
+  /typescript/4.9.5:
+    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
     dev: true
 
   /vite/4.0.3:
