@@ -122,10 +122,11 @@ export default class RolloverTodosPlugin extends Plugin {
 
   private isDailyNote(file: TFile): boolean {
     const { folder, format } = this.getDailyNoteSettings();
+    const r = new RegExp("^" + folder + "/(.*).md$");
 
     if (
       file.path.startsWith(folder) &&
-      moment(file.basename, format, true).isValid()
+      moment(file.path.replace(r, "$1"), format, true).isValid()
     ) {
       return true;
     }
