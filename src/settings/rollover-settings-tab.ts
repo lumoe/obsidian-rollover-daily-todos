@@ -2,6 +2,8 @@ import { Setting, PluginSettingTab, App } from "obsidian";
 import RolloverTodosPlugin, { DailyNoteSettings } from "src";
 import path from "path";
 
+const DEFAULT_DATE_FORMAT = "YYYY-MM-DD";
+
 export class RolloverSettingTab extends PluginSettingTab {
   plugin: RolloverTodosPlugin;
 
@@ -10,13 +12,38 @@ export class RolloverSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
-  getDailyNoteSettings(): DailyNoteSettings {
-    const { folder, format, template } =
+  shouldUsePeriodicNotesSettings = (): boolean => {
+    const periodicNotesEnabled =
       // @ts-ignore
-      this.app.internalPlugins.getPluginById("daily-notes")?.instance
-        ?.options || {};
+      this.app.plugins.enabledPlugins.has("periodic-notes");
+
+    if (periodicNotesEnabled) {
+      // @ts-ignore
+      const periodicNotes = this.app.plugins.getPlugin("periodic-notes");
+      return periodicNotes.settings?.daily?.enabled;
+    }
+
+    return false;
+  };
+
+  getDailyNoteSettings(): DailyNoteSettings {
+    // @ts-ignore
+    const { plugins, internalPlugins } = this.app;
+
+    if (this.shouldUsePeriodicNotesSettings()) {
+      const { format, folder, template } =
+        plugins.getPlugin("periodic-notes")?.settings?.daily || {};
+      return {
+        format: format || DEFAULT_DATE_FORMAT,
+        folder: folder?.trim() || "",
+        template: template?.trim() || "",
+      };
+    }
+
+    const { folder, format, template } =
+      internalPlugins.getPluginById("daily-notes")?.instance?.options || {};
     return {
-      format: format || "YYYY-MM-DD",
+      format: format || DEFAULT_DATE_FORMAT,
       folder: path.basename(folder?.trim()) || "",
       template: template?.trim() || "",
     };
