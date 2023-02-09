@@ -69,7 +69,7 @@ export default class RolloverTodosPlugin extends Plugin {
     let { folder, format } = getDailyNoteSettings();
 
     folder = this.getCleanFolder(folder);
-    const r = new RegExp("^" + folder + "/(.*).md$");
+    const dailyNoteRegexMatch = new RegExp("^" + folder + "/(.*).md$");
     const todayMoment = moment();
 
     // get all notes in directory that aren't null
@@ -77,7 +77,11 @@ export default class RolloverTodosPlugin extends Plugin {
       .getMarkdownFiles()
       .filter((file) => file.path.startsWith(folder))
       .filter((file) =>
-        moment(file.path.replace(r, "$1"), format, true).isValid()
+        moment(
+          file.path.replace(dailyNoteRegexMatch, "$1"),
+          format,
+          true
+        ).isValid()
       )
       .filter((file) => file.basename)
       .filter((file) =>
