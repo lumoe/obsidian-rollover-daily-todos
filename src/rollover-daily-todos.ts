@@ -61,20 +61,6 @@ export default class RolloverTodosPlugin extends Plugin {
     return dailyNotesEnabled || periodicNotesEnabled;
   }
 
-  normalizeDailyNotesFolder(folder: string): string {
-    // Check if user defined folder with root `/` e.g. `/dailies`
-    if (folder.startsWith("/")) {
-      folder = folder.substring(1);
-    }
-
-    // Check if user defined folder with trailing `/` e.g. `dailies/`
-    if (folder.endsWith("/")) {
-      folder = folder.substring(0, folder.length - 1);
-    }
-
-    return folder;
-  }
-
   momentObjectForPath(
     file: TFile,
     folder: string,
@@ -98,7 +84,6 @@ export default class RolloverTodosPlugin extends Plugin {
   getLastDailyNote(): TFile {
     const { folder, format } = this.getDailyNoteSettings();
     const dailyNoteRegexMatch = new RegExp("^" + folder + "/(.*).md$");
-    const normalizedFolder = this.normalizeDailyNotesFolder(folder);
     const todayMoment = moment();
 
     // get all notes in directory that aren't null
