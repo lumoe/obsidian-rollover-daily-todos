@@ -10,8 +10,8 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "build:dev": "node esbuild.config.mjs",
     "test": "vitest",
-    "test-ci": "vitest run",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "ci": "pnpm i && pnpm build && vitest run"
   },
   "keywords": [],
   "author": "Matthew Sessions",

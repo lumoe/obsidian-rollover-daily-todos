@@ -20,10 +20,6 @@ export type DailyNoteSettings = {
   template: string;
 };
 
-const getFileMoment = (file: TFile, format: string): moment.Moment => {
-  return moment(path.basename(file.path, ".md"), format);
-};
-
 const filterOutEmptyTodos = (lines: Array<string>): Array<string> => {
   return lines.filter((l) => l.trim() !== "- [ ]");
 };
