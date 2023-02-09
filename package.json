@@ -10,7 +10,7 @@
     "format": "prettier --write ."
   },
   "keywords": [],
-  "author": "Matthew Sessions",
+  "author": "Lukas Mölschl",
   "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^15.1.0",
