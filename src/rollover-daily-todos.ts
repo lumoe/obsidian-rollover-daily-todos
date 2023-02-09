@@ -61,20 +61,68 @@ export default class RolloverTodosPlugin extends Plugin {
     return dailyNotesEnabled || periodicNotesEnabled;
   }
 
-  getLastDailyNote(): TFile {
-    const { format } = this.getDailyNoteSettings();
+  normalizeDailyNotesFolder(folder: string): string {
+    // Check if user defined folder with root `/` e.g. `/dailies`
+    if (folder.startsWith("/")) {
+      folder = folder.substring(1);
+    }
 
+    // Check if user defined folder with trailing `/` e.g. `dailies/`
+    if (folder.endsWith("/")) {
+      folder = folder.substring(0, folder.length - 1);
+    }
+
+    return folder;
+  }
+
+  momentObjectForPath(
+    file: TFile,
+    folder: string,
+    format: string
+  ): moment.Moment {
+    let path = file.path;
+
+    if (path.startsWith(`${folder}/`)) {
+      // Remove length of folder from start of path
+      path = path.substring(folder.length + 1);
+    }
+
+    if (path.endsWith(`.${file.extension}`)) {
+      // Remove length of file extension from end of path
+      path = path.substring(0, path.length - file.extension.length - 1);
+    }
+
+    return moment(path, format);
+  }
+
+  getLastDailyNote(): TFile {
+    const { folder, format } = this.getDailyNoteSettings();
+    const dailyNoteRegexMatch = new RegExp("^" + folder + "/(.*).md$");
+    const normalizedFolder = this.normalizeDailyNotesFolder(folder);
+    const todayMoment = moment();
+
+    // get all notes in directory that aren't null
     const dailyNoteFiles = this.app.vault
       .getMarkdownFiles()
-      .filter(
-        (file) =>
-          this.isDailyNote(file) &&
-          getFileMoment(file, format).isSameOrBefore(moment(), "day")
+      .filter((file) => file.path.startsWith(folder))
+      .filter((file) =>
+        moment(
+          file.path.replace(dailyNoteRegexMatch, "$1"),
+          format,
+          true
+        ).isValid()
+      )
+      .filter((file) => file.basename)
+      .filter((file) =>
+        this.momentObjectForPath(file, folder, format).isSameOrBefore(
+          todayMoment,
+          "day"
+        )
       )
       .sort(
         (a, b) =>
-          getFileMoment(b, format).valueOf() -
-          getFileMoment(a, format).valueOf()
+          this.momentObjectForPath(b, folder, format).valueOf() -
+          this.momentObjectForPath(a, folder, format).valueOf()
       );
 
     return dailyNoteFiles[1];
