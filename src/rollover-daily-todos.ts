@@ -20,6 +20,8 @@ export type DailyNoteSettings = {
   template: string;
 };
 
+const DEFAULT_DATE_FORMAT = "YYYY-MM-DD";
+
 const filterOutEmptyTodos = (lines: Array<string>): Array<string> => {
   return lines.filter((l) => l.trim() !== "- [ ]");
 };
@@ -109,14 +111,41 @@ export default class RolloverTodosPlugin extends Plugin {
     return dailyNoteFiles[1];
   }
 
-  getDailyNoteSettings(): DailyNoteSettings {
-    const { folder, format, template } =
+  // TODO: The following two functions are duplicated from rollover-settings-tab.ts.
+  //  Is there a way to centralize this?
+  shouldUsePeriodicNotesSettings = (): boolean => {
+    const periodicNotesEnabled =
       // @ts-ignore
-      this.app.internalPlugins.getPluginById("daily-notes")?.instance
-        ?.options || {};
+      this.app.plugins.enabledPlugins.has("periodic-notes");
+
+    if (periodicNotesEnabled) {
+      // @ts-ignore
+      const periodicNotes = this.app.plugins.getPlugin("periodic-notes");
+      return periodicNotes.settings?.daily?.enabled;
+    }
+
+    return false;
+  };
+
+  getDailyNoteSettings(): DailyNoteSettings {
+    // @ts-ignore
+    const { plugins, internalPlugins } = this.app;
+
+    if (this.shouldUsePeriodicNotesSettings()) {
+      const { format, folder, template } =
+        plugins.getPlugin("periodic-notes")?.settings?.daily || {};
+      return {
+        format: format || DEFAULT_DATE_FORMAT,
+        folder: folder?.trim() || "",
+        template: template?.trim() || "",
+      };
+    }
+
+    const { folder, format, template } =
+      internalPlugins.getPluginById("daily-notes")?.instance?.options || {};
     return {
-      format: format || "YYYY-MM-DD",
-      folder: folder ? path.basename(folder?.trim()) : "",
+      format: format || DEFAULT_DATE_FORMAT,
+      folder: path.basename(folder?.trim()) || "",
       template: template?.trim() || "",
     };
   }
