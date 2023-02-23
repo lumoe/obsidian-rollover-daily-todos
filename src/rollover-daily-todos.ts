@@ -1,7 +1,6 @@
 import { Notice, Plugin, moment, TFile } from "obsidian";
 import { RolloverSettingTab } from "./settings";
 import { getTodos } from "./get-todos";
-import path from "path";
 import { getContentBetweenHeadings } from "./utils";
 
 type Settings = {

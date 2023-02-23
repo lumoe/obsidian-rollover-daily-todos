@@ -1,6 +1,5 @@
 import { Setting, PluginSettingTab, App } from "obsidian";
 import RolloverTodosPlugin, { DailyNoteSettings } from "src";
-import path from "path";
 
 const DEFAULT_DATE_FORMAT = "YYYY-MM-DD";
 
