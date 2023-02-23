@@ -1,7 +1,5 @@
 import { Setting, PluginSettingTab, App } from "obsidian";
-import RolloverTodosPlugin, { DailyNoteSettings } from "src";
-
-const DEFAULT_DATE_FORMAT = "YYYY-MM-DD";
+import RolloverTodosPlugin from "src";
 
 export class RolloverSettingTab extends PluginSettingTab {
   plugin: RolloverTodosPlugin;
@@ -11,41 +9,23 @@ export class RolloverSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
-  shouldUsePeriodicNotesSettings = (): boolean => {
-    const periodicNotesEnabled =
-      // @ts-ignore
-      this.app.plugins.enabledPlugins.has("periodic-notes");
+  async getTemplateHeadings() {
+    let { template } = this.plugin.getDailyNoteSettings();
+    if (!template) return [];
 
-    if (periodicNotesEnabled) {
-      // @ts-ignore
-      const periodicNotes = this.app.plugins.getPlugin("periodic-notes");
-      return periodicNotes.settings?.daily?.enabled;
+    if (!template.endsWith(".md")) {
+      template = template + ".md";
     }
 
-    return false;
-  };
+    let file = this.app.vault
+      .getMarkdownFiles()
+      .filter((f) => f.path === template)[0];
 
-  getDailyNoteSettings(): DailyNoteSettings {
-    // @ts-ignore
-    const { plugins, internalPlugins } = this.app;
-
-    if (this.shouldUsePeriodicNotesSettings()) {
-      const { format, folder, template } =
-        plugins.getPlugin("periodic-notes")?.settings?.daily || {};
-      return {
-        format: format || DEFAULT_DATE_FORMAT,
-        folder: folder?.trim().replace(/(.*)\/$/, "$1") || "",
-        template: template?.trim() || "",
-      };
-    }
-
-    const { folder, format, template } =
-      internalPlugins.getPluginById("daily-notes")?.instance?.options || {};
-    return {
-      format: format || DEFAULT_DATE_FORMAT,
-      folder: folder?.trim().replace(/(.*)\/$/, "$1") || "",
-      template: template?.trim() || "",
-    };
+    const templateContents = await this.app.vault.read(file);
+    const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(
+      ([heading]) => heading
+    );
+    return allHeadings;
   }
 
   async display() {
@@ -54,26 +34,36 @@ export class RolloverSettingTab extends PluginSettingTab {
 
     containerEl.createEl("h2", { text: "Rollover Daily TODOs - Settings" });
 
-    // Template Headers
-    const con = containerEl.createEl("div", { cls: "setting-item" });
-    const d = con.createEl("div", { cls: "setting-item-info" });
-    d.createEl("b", { text: "Template Headings", cls: "setting-item-name" });
-    d.createEl("div", {
-      text: "The headings from your daily-template that act as the source and target to roll over TODOs",
-      cls: "setting-item-description",
-    });
+    // Only reload if settings empty
+    if (this.plugin.settings.headings.length <= 0) {
+      const templateHeadings = await this.getTemplateHeadings();
+      this.plugin.settings.headings = templateHeadings.map((th) => {
+        return { name: th, checked: false };
+      });
+    }
 
-    this.plugin.settings.headings.forEach((header, i) => {
-      new Setting(containerEl).setName(header.name).addToggle((toggle) => {
-        toggle.setValue(header.checked).onChange((v) => {
-          this.plugin.settings.headings[i].checked =
-            !this.plugin.settings.headings[i].checked;
-          this.plugin.saveSettings();
+    // Template Headers
+    if (this.plugin.settings.headings.length >= 0) {
+      const con = containerEl.createEl("div", { cls: "setting-item" });
+      const d = con.createEl("div", { cls: "setting-item-info" });
+      d.createEl("b", { text: "Template Headings", cls: "setting-item-name" });
+      d.createEl("div", {
+        text: "The headings from your daily-template that act as the source and target to roll over TODOs",
+        cls: "setting-item-description",
+      });
+
+      this.plugin.settings.headings.forEach((header, i) => {
+        new Setting(containerEl).setName(header.name).addToggle((toggle) => {
+          toggle.setValue(header.checked).onChange((v) => {
+            this.plugin.settings.headings[i].checked =
+              !this.plugin.settings.headings[i].checked;
+            this.plugin.saveSettings();
+          });
         });
       });
-    });
 
-    containerEl.createEl("div", { cls: "rollover-todos-spacer" });
+      containerEl.createEl("div", { cls: "rollover-todos-spacer" });
+    }
 
     new Setting(containerEl)
       .setName("Delete todos from previous day")

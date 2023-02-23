@@ -29,16 +29,13 @@ export default class RolloverTodosPlugin extends Plugin {
   settings: Settings;
 
   async loadSettings() {
-    const templateHeadings = await this.getTemplateHeadings();
     const DEFAULT_SETTINGS: Settings = {
       deleteOnComplete: false,
       removeEmptyTodos: false,
       rolloverChildren: false,
-      headings: templateHeadings.map((th) => {
-        return { name: th, checked: false };
-      }),
+      headings: [],
     };
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
   }
 
   async saveSettings() {
@@ -110,8 +107,6 @@ export default class RolloverTodosPlugin extends Plugin {
     return dailyNoteFiles[1];
   }
 
-  // TODO: The following two functions are duplicated from rollover-settings-tab.ts.
-  //  Is there a way to centralize this?
   shouldUsePeriodicNotesSettings = (): boolean => {
     const periodicNotesEnabled =
       // @ts-ignore
@@ -156,25 +151,6 @@ export default class RolloverTodosPlugin extends Plugin {
       lines: dnLines,
       withChildren: this.settings.rolloverChildren,
     });
-  }
-
-  async getTemplateHeadings() {
-    let { template } = this.getDailyNoteSettings();
-    if (!template) return [];
-
-    if (!template.endsWith(".md")) {
-      template = template + ".md";
-    }
-
-    let file = this.app.vault
-      .getMarkdownFiles()
-      .filter((f) => f.path === template)[0];
-
-    const templateContents = await this.app.vault.read(file);
-    const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(
-      ([heading]) => heading
-    );
-    return allHeadings;
   }
 
   private isDailyNote(file: TFile): boolean {
