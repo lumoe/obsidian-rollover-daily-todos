@@ -136,7 +136,7 @@ export default class RolloverTodosPlugin extends Plugin {
         plugins.getPlugin("periodic-notes")?.settings?.daily || {};
       return {
         format: format || DEFAULT_DATE_FORMAT,
-        folder: folder?.trim() || "",
+        folder: folder?.trim().replace(/(.*)\/$/, "$1") || "",
         template: template?.trim() || "",
       };
     }
@@ -145,7 +145,7 @@ export default class RolloverTodosPlugin extends Plugin {
       internalPlugins.getPluginById("daily-notes")?.instance?.options || {};
     return {
       format: format || DEFAULT_DATE_FORMAT,
-      folder: path.basename(folder?.trim()) || "",
+      folder: folder?.trim().replace(/(.*)\/$/, "$1") || "",
       template: template?.trim() || "",
     };
   }
