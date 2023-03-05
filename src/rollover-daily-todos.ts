@@ -327,7 +327,7 @@ export default class RolloverTodosPlugin extends Plugin {
       : "";
 
     const message = [headingNotFoundMsg, linesRolledOverMsg, emptyTodosMsg]
-      .filter((s) => s) // Only keep the variables with content
+      .filter(Boolean) // Only keep the variables with content
       .join("\n");
     new Notice(message, 4000);
   }
