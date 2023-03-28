@@ -76,8 +76,9 @@ export default class RolloverTodosPlugin extends Plugin {
   }
 
   getLastDailyNote(): TFile {
-    const { folder, format } = this.getDailyNoteSettings();
-    const dailyNoteRegexMatch = new RegExp("^" + folder + "/(.*).md$");
+    let { folder, format } = this.getDailyNoteSettings();
+    folder = folder.length === 0 ? folder : folder + "/";
+    const dailyNoteRegexMatch = new RegExp("^" + folder + "(.*).md$");
     const todayMoment = moment();
 
     // get all notes in directory that aren't null
@@ -154,8 +155,9 @@ export default class RolloverTodosPlugin extends Plugin {
   }
 
   private isDailyNote(file: TFile): boolean {
-    const { folder, format } = this.getDailyNoteSettings();
-    const r = new RegExp("^" + folder + "/(.*).md$");
+    let { folder, format } = this.getDailyNoteSettings();
+    folder = folder.length === 0 ? folder : folder + "/";
+    const r = new RegExp("^" + folder + "(.*).md$");
 
     if (
       file.path.startsWith(folder) &&
