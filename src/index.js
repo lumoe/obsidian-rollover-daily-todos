@@ -69,7 +69,9 @@ export default class RolloverTodosPlugin extends Plugin {
     let { folder, format } = getDailyNoteSettings();
 
     folder = this.getCleanFolder(folder);
-    const dailyNoteRegexMatch = new RegExp("^" + folder + "/(.*).md$");
+    folder = folder.length === 0 ? folder : folder + "/";
+
+    const dailyNoteRegexMatch = new RegExp("^" + folder + "(.*).md$");
     const todayMoment = moment();
 
     // get all notes in directory that aren't null
