@@ -1,6 +1,6 @@
 {
   "name": "obsidian-rollover-daily-todos",
-  "version": "1.1.3",
+  "version": "1.1.5",
   "description": "This Obsidian.md plugin rolls over incomplete TODOs from the previous daily note to today's daily note. (https://obsidian.md)",
   "main": "main.js",
   "scripts": {
