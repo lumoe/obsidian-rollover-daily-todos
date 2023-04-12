@@ -21,6 +21,11 @@ export class RolloverSettingTab extends PluginSettingTab {
       .getMarkdownFiles()
       .filter((f) => f.path === template)[0];
 
+    if (file === null) {
+      // File is not available
+      return [];
+    }
+
     const templateContents = await this.app.vault.read(file);
     const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(
       ([heading]) => heading
