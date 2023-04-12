@@ -12,8 +12,14 @@ export default class RolloverSettingTab extends PluginSettingTab {
     if (!template) return [];
 
     let file = this.app.vault.getAbstractFileByPath(template);
-    if (file == null) {
+
+    if (file === null) {
       file = this.app.vault.getAbstractFileByPath(template + ".md");
+    }
+
+    if (file === null) {
+      // file not available, no template-heading can be returned
+      return [];
     }
 
     const templateContents = await this.app.vault.read(file);
