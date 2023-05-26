@@ -105,9 +105,9 @@ export default class RolloverTodosPlugin extends Plugin {
   getFileMoment(file, folder, format) {
     let path = file.path;
 
-    if (path.startsWith(`${folder}/`)) {
+    if (path.startsWith(folder)) {
       // Remove length of folder from start of path
-      path = path.substring(folder.length + 1);
+      path = path.substring(folder.length);
     }
 
     if (path.endsWith(`.${file.extension}`)) {
