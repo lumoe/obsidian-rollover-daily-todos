@@ -128,7 +128,7 @@ export default class RolloverTodosPlugin extends Plugin {
     });
   }
 
-  async sortHeadersIntoHeirarchy(file) {
+  async sortHeadersIntoHierarchy(file) {
     ///console.log('testing')
     const templateContents = await this.app.vault.read(file);
     const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(
@@ -202,7 +202,7 @@ export default class RolloverTodosPlugin extends Plugin {
       if (!lastDailyNote) return;
 
       // TODO: Rollover to subheadings (optional)
-      //this.sortHeadersIntoHeirarchy(lastDailyNote)
+      //this.sortHeadersIntoHierarchy(lastDailyNote)
 
       // get unfinished todos from yesterday, if exist
       let todos_yesterday = await this.getAllUnfinishedTodos(lastDailyNote);

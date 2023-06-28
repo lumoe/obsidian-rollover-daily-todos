@@ -33,7 +33,7 @@ class TodoParser {
   #getChildren(parentLinum) {
     const children = [];
     let nextLinum = parentLinum + 1;
-    while (this.#isChildof(parentLinum, nextLinum)) {
+    while (this.#isChildOf(parentLinum, nextLinum)) {
       children.push(this.#lines[nextLinum]);
       nextLinum++;
     }
@@ -41,7 +41,7 @@ class TodoParser {
   }
 
   // Returns true if line `linum` has more indentation than line `parentLinum`
-  #isChildof(parentLinum, linum) {
+  #isChildOf(parentLinum, linum) {
     if (parentLinum >= this.#lines.length || linum >= this.#lines.length) {
       return false;
     }

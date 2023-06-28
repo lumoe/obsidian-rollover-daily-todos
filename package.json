@@ -9,6 +9,11 @@
     "test": "vitest",
     "format": "prettier --write ."
   },
+  "cspell": {
+    "words": [
+      "todos"
+    ]
+  },
   "keywords": [],
   "author": "Lukas Mölschl",
   "license": "MIT",
