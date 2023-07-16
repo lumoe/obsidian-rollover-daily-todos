@@ -93,5 +93,19 @@ export default class RolloverSettingTab extends PluginSettingTab {
             this.plugin.saveSettings();
           })
       );
+
+    new Setting(this.containerEl)
+      .setName("Remove last daily note file")
+      .setDesc(
+        'Warning: this option will remove from disk your last daily note after roll over.'
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.deleteLastDailyNoteFile || false)
+          .onChange((value) => {
+            this.plugin.settings.deleteLastDailyNoteFile = value;
+            this.plugin.saveSettings();
+          })
+      );
   }
 }
