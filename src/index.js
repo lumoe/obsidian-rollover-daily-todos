@@ -45,6 +45,7 @@ export default class RolloverTodosPlugin extends Plugin {
       deleteOnComplete: false,
       removeEmptyTodos: false,
       rolloverChildren: false,
+      deleteLastDailyNoteFile: false,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -338,6 +339,10 @@ export default class RolloverTodosPlugin extends Plugin {
       }
       this.undoHistoryTime = new Date();
       this.undoHistory = [undoHistoryInstance];
+      if (this.settings.deleteLastDailyNoteFile) {
+        this.app.vault.delete(lastDailyNote)
+        new Notice("RolloverTodosPlugin has deleted last daily note file.", 2000);
+      }
     }
   }
 
