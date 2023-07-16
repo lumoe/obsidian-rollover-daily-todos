@@ -1,4 +1,4 @@
-import { Notice, Plugin, FileManager } from "obsidian";
+import { Notice, Plugin } from "obsidian";
 import {
   getDailyNoteSettings,
   getAllDailyNotes,
@@ -339,8 +339,8 @@ export default class RolloverTodosPlugin extends Plugin {
       }
       this.undoHistoryTime = new Date();
       this.undoHistory = [undoHistoryInstance];
-      if (deleteLastDailyNoteFile) {
-        FileManager.delete(lastDailyNote)
+      if (this.settings.deleteLastDailyNoteFile) {
+        this.app.vault.delete(lastDailyNote)
         new Notice("RolloverTodosPlugin has deleted last daily note file.", 2000);
       }
     }
