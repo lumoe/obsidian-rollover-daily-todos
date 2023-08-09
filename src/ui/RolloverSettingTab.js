@@ -34,6 +34,18 @@ export default class RolloverSettingTab extends PluginSettingTab {
 
     this.containerEl.empty();
     new Setting(this.containerEl)
+      .setName("Automatically rollover")
+      .setDesc("Rollover todos when today's dialy note is created automatically")
+      .addToggle((toggle) => 
+        toggle
+          .setValue(this.plugin.settings.automaticallyRollover || false)
+          .onChange((value) => {
+            this.plugin.settings.automaticallyRollover = value;
+            this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(this.containerEl)
       .setName("Template heading")
       .setDesc("Which heading from your template should the todos go under")
       .addDropdown((dropdown) =>

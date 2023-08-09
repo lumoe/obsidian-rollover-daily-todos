@@ -42,6 +42,7 @@ export default class RolloverTodosPlugin extends Plugin {
   async loadSettings() {
     const DEFAULT_SETTINGS = {
       templateHeading: "none",
+      automaticallyRollover: true,
       deleteOnComplete: false,
       removeEmptyTodos: false,
       rolloverChildren: false,
@@ -154,7 +155,10 @@ export default class RolloverTodosPlugin extends Plugin {
     return folder;
   }
 
-  async rollover(file = undefined) {
+  async rollover(file = undefined, manual = false) {
+    // If we don't automatically rollover, we abort processing -- unless we've explicitly requested a rollover
+    if (!manual && !this.settings.automaticallyRollover) return;
+
     /*** First we check if the file created is actually a valid daily note ***/
     let { folder, format } = getDailyNoteSettings();
     let ignoreCreationTime = false;
@@ -350,7 +354,7 @@ export default class RolloverTodosPlugin extends Plugin {
 
     this.registerEvent(
       this.app.vault.on("create", async (file) => {
-        this.rollover(file);
+        this.rollover(file, false);
       })
     );
 
@@ -358,7 +362,7 @@ export default class RolloverTodosPlugin extends Plugin {
       id: "obsidian-rollover-daily-todos-rollover",
       name: "Rollover Todos Now",
       callback: () => {
-        this.rollover();
+        this.rollover(undefined, true);
       },
     });
 
