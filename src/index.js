@@ -45,6 +45,7 @@ export default class RolloverTodosPlugin extends Plugin {
       deleteOnComplete: false,
       removeEmptyTodos: false,
       rolloverChildren: false,
+      rolloverOnFileCreate: true,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -350,6 +351,8 @@ export default class RolloverTodosPlugin extends Plugin {
 
     this.registerEvent(
       this.app.vault.on("create", async (file) => {
+        // Check if automatic daily note creation is enabled
+        if (!this.settings.rolloverOnFileCreate) return;
         this.rollover(file);
       })
     );
