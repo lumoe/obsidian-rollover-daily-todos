@@ -58,15 +58,33 @@ export class RolloverSettingTab extends PluginSettingTab {
             );
 
         new Setting(this.containerEl)
-            .setName("Delete todos from previous day")
+            .setName("Delete old pending tasks")
             .setDesc(
-                `Once todos are found, they are added to Today's Daily Note. If successful, they are deleted from Yesterday's Daily note. Enabling this is destructive and may result in lost data. Keeping this disabled will simply duplicate them from yesterday's note and place them in the appropriate section. Note that currently, duplicate todos will be deleted regardless of what heading they are in, and which heading you choose from above.`
+                `Enabled: Pending todos are not kept. (⚠️ Destructive! May result in lost data). \
+                Disabled: All pending tasks are kept.`
             )
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.deleteOnComplete || false)
                     .onChange((value) => {
                         this.plugin.settings.deleteOnComplete = value;
+                        this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(this.containerEl)
+            .setName("Do not keep finished todos")
+            .setDesc(
+                `Enabled: Finished todos are not kept. (⚠️ Destructive! May result in lost data). \
+            Disabled: All finished tasks are kept.`
+            )
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(
+                        this.plugin.settings.deleteFinishedOnComplete || false
+                    )
+                    .onChange((value) => {
+                        this.plugin.settings.deleteFinishedOnComplete = value;
                         this.plugin.saveSettings();
                     })
             );

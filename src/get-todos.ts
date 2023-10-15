@@ -1,3 +1,8 @@
+export type ComplexTodoSpec = {
+    text: string;
+    type: "pending" | "done" | "nested";
+};
+
 class TodoParser {
     // List of strings that include the Markdown content
     #lines;
@@ -14,6 +19,24 @@ class TodoParser {
     #isTodo(s: any) {
         const r = /\s*- \[ \].*/g;
         return r.test(s);
+    }
+    #isComplexTodo(line: string): Boolean {
+        const regex = /^- \[[xX ]\] .+$/g;
+        return regex.test(line);
+    }
+
+    #castToComplexTodo(todo_line: string): ComplexTodoSpec | null {
+        if (this.#isComplexTodo(todo_line) === false) {
+            return null;
+        }
+        const complexTodo: ComplexTodoSpec = {
+            text: todo_line,
+            type: "done",
+        };
+        if (this.#isTodo(todo_line) === true) {
+            complexTodo.type = "pending";
+        }
+        return complexTodo;
     }
 
     // Returns true if line after line-number `l` is a nested item
@@ -69,6 +92,30 @@ class TodoParser {
         }
         return todos;
     }
+    getComplexTodos(): ComplexTodoSpec[] {
+        let todos: ComplexTodoSpec[] = [];
+        for (let l = 0; l < this.#lines.length; l++) {
+            const line = this.#lines[l];
+            if (this.#isComplexTodo(line)) {
+                const complexTodo = this.#castToComplexTodo(line);
+                todos.push(complexTodo);
+                if (this.#withChildren && this.#hasChildren(l)) {
+                    const cs = this.#getChildren(l);
+                    const mapTextToComplexTodo = (text: string) => {
+                        return {
+                            text,
+                            type: "nested",
+                        } as ComplexTodoSpec;
+                    };
+                    const _cs: ComplexTodoSpec[] = cs.map(mapTextToComplexTodo);
+                    todos = [...todos, ..._cs];
+                    l += cs.length;
+                }
+            }
+        }
+        console.log({ todos });
+        return todos;
+    }
 }
 
 // Utility-function that acts as a thin wrapper around `TodoParser`
@@ -81,4 +128,15 @@ export const getTodos = ({
 }) => {
     const todoParser = new TodoParser(lines, withChildren);
     return todoParser.getTodos();
+};
+
+export const getComplexTodos = ({
+    lines,
+    withChildren = false,
+}: {
+    lines: any;
+    withChildren: boolean;
+}) => {
+    const todoParser = new TodoParser(lines, withChildren);
+    return todoParser.getComplexTodos();
 };

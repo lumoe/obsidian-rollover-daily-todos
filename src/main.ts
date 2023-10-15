@@ -13,7 +13,7 @@ import {
 } from "obsidian-daily-notes-interface";
 import { UndoModal } from "./ui/UndoModal";
 import { RolloverSettingTab } from "./ui/RolloverSettingTab";
-import { getTodos } from "./get-todos";
+import { ComplexTodoSpec, getComplexTodos, getTodos } from "./get-todos";
 import * as moment from "moment";
 declare global {
     interface Window {
@@ -68,6 +68,7 @@ export interface RolloverSettingsSpec {
     removeEmptyTodos: boolean;
     rolloverChildren: boolean;
     rolloverOnFileCreate: boolean;
+    deleteFinishedOnComplete: boolean;
 }
 
 export default class RolloverTodosPlugin extends Plugin {
@@ -81,6 +82,7 @@ export default class RolloverTodosPlugin extends Plugin {
         const DEFAULT_SETTINGS = {
             templateHeading: "none",
             deleteOnComplete: false,
+            deleteFinishedOnComplete: false,
             removeEmptyTodos: false,
             rolloverChildren: false,
             rolloverOnFileCreate: true,
@@ -118,7 +120,6 @@ export default class RolloverTodosPlugin extends Plugin {
         folder = this.getCleanFolder(folder);
         folder = folder.length === 0 ? folder : folder + "/";
 
-        const dailyNoteRegexMatch = new RegExp("^" + folder + "(.*).md$");
         const todayMoment = moment();
 
         // get all notes in directory that aren't null
@@ -126,6 +127,10 @@ export default class RolloverTodosPlugin extends Plugin {
             .getMarkdownFiles()
             .filter((file) => file.path.startsWith(folder))
             .filter((file) => {
+                const dailyNoteRegexMatch = new RegExp(
+                    "^" + folder + "(.*).md$"
+                );
+                // replace the the entire file.path with the matched in group (.*)
                 const isValid = moment(
                     file.path.replace(dailyNoteRegexMatch, "$1"),
                     format,
@@ -166,7 +171,14 @@ export default class RolloverTodosPlugin extends Plugin {
 
         return window.moment(path, format);
     }
-
+    async getAllComplexTodos(virtualFile: TFile) {
+        const content = await this.app.vault.read(virtualFile);
+        const lines = content.split(/\r?\n|\r|\n/g);
+        return getComplexTodos({
+            lines,
+            withChildren: this.settings.rolloverChildren,
+        });
+    }
     async getAllUnfinishedTodos(file: TFile) {
         const dn = await this.app.vault.read(file);
         const dnLines = dn.split(/\r?\n|\r|\n/g);
@@ -178,14 +190,14 @@ export default class RolloverTodosPlugin extends Plugin {
     }
 
     async sortHeadersIntoHierarchy(file: TFile) {
-        ///console.log('testing')
+        ///
         const templateContents = await this.app.vault.read(file);
         const allHeadings = Array.from(
             templateContents.matchAll(/#{1,} .*/g)
         ).map(([heading]) => heading);
 
         if (allHeadings.length > 0) {
-            //  console.log(createRepresentationFromHeadings(allHeadings));
+            //
         }
     }
 
@@ -203,23 +215,40 @@ export default class RolloverTodosPlugin extends Plugin {
         return folder;
     }
 
-    async rollover(file: TFile | undefined = undefined) {
-        /*** First we check if the file created is actually a valid daily note ***/
-        let { folder, format } = getDailyNoteSettings();
+    #getFileStatus(
+        file: TFile | undefined,
+        allDailyNotes: Record<string, TFile>
+    ) {
         let ignoreCreationTime = false;
 
         // Rollover can be called, but we need to get the daily file
         if (file == undefined) {
-            const allDailyNotes = getAllDailyNotes();
             file = getDailyNote(window.moment(), allDailyNotes);
             ignoreCreationTime = true;
         }
-        if (!file) return;
+        return {
+            file,
+            ignoreCreationTime,
+        };
+    }
+    async rollover(virtualFile: TFile | undefined = undefined): Promise<void> {
+        /*** First we check if the file created is actually a valid daily note ***/
+        let { folder, format } = getDailyNoteSettings();
+        const allDailyNotes = getAllDailyNotes();
+        const { file, ignoreCreationTime } = this.#getFileStatus(
+            virtualFile,
+            allDailyNotes
+        );
+        if (!file) {
+            return;
+        }
 
         folder = this.getCleanFolder(folder);
 
         // is a daily note
-        if (!file.path.startsWith(folder)) return;
+        if (!file.path.startsWith(folder)) {
+            return;
+        }
 
         // is today's daily note
         const today = new Date();
@@ -227,176 +256,256 @@ export default class RolloverTodosPlugin extends Plugin {
         const filePathConstructed = `${folder}${
             folder == "" ? "" : "/"
         }${todayFormatted}.${file.extension}`;
-        if (filePathConstructed !== file.path) return;
 
+        if (filePathConstructed !== file.path) {
+            return;
+        }
         // was just created
         if (
             today.getTime() - file.stat.ctime > MAX_TIME_SINCE_CREATION &&
             !ignoreCreationTime
-        )
+        ) {
             return;
+        }
 
         /*** Next, if it is a valid daily note, but we don't have daily notes enabled, we must alert the user ***/
-        if (!this.isDailyNotesEnabled()) {
+        if (this.isDailyNotesEnabled() === false) {
             new Notice(
                 "RolloverTodosPlugin unable to rollover unfinished todos: Please enable Daily Notes, or Periodic Notes (with daily notes enabled).",
                 10000
             );
-        } else {
-            const { templateHeading, deleteOnComplete, removeEmptyTodos } =
-                this.settings;
+            return;
+        }
+        await this.doGenDailyNotesStrategy(file);
+    }
 
-            // check if there is a daily note from yesterday
-            const lastDailyNote = this.getLastDailyNote();
-            if (!lastDailyNote) return;
+    scrapeComplexTodosForPendingRootFamily(complexTodos: ComplexTodoSpec[]) {
+        let keep = 0;
+        const targetTodos = [];
 
-            // TODO: Rollover to subheadings (optional)
-            //this.sortHeadersIntoHierarchy(lastDailyNote)
-
-            // get unfinished todos from yesterday, if exist
-            let todos_yesterday = await this.getAllUnfinishedTodos(
-                lastDailyNote
-            );
-
-            console.log(
-                `rollover-daily-todos: ${todos_yesterday.length} todos found in ${lastDailyNote.basename}.md`
-            );
-
-            if (todos_yesterday.length == 0) {
-                return;
+        for (let i = 0; i < complexTodos.length; i++) {
+            const complexTodo = complexTodos[i];
+            if (complexTodo.type === "done") {
+                keep = +1;
+            }
+            if (complexTodo.type === "pending") {
+                keep = -1;
             }
 
-            // setup undo history
-            let undoHistoryInstance: UndoHistoryInstanceSpec = {
-                previousDay: {
-                    file: undefined,
-                    oldContent: "",
-                },
-                today: {
-                    file: undefined,
-                    oldContent: "",
-                },
-            };
-
-            // Potentially filter todos from yesterday for today
-            let todosAdded = 0;
-            let emptiesToNotAddToTomorrow = 0;
-            let todos_today = !removeEmptyTodos ? todos_yesterday : [];
-            if (removeEmptyTodos) {
-                todos_yesterday.forEach((line, i) => {
-                    const trimmedLine = (line || "").trim();
-                    if (trimmedLine != "- [ ]" && trimmedLine != "- [  ]") {
-                        todos_today.push(line);
-                        todosAdded++;
-                    } else {
-                        emptiesToNotAddToTomorrow++;
-                    }
-                });
-            } else {
-                todosAdded = todos_yesterday.length;
+            if (keep < 0) {
+                targetTodos.push(complexTodo);
             }
+        }
 
-            // get today's content and modify it
-            let templateHeadingNotFoundMessage = "";
-            const templateHeadingSelected = templateHeading !== "none";
+        return targetTodos;
+    }
 
-            if (todos_today.length > 0) {
-                let dailyNoteContent = await this.app.vault.read(file);
-                undoHistoryInstance.today = {
-                    file: file,
-                    oldContent: `${dailyNoteContent}`,
-                };
-                const todos_todayString = `\n${todos_today.join("\n")}`;
+    async doGenDailyNotesStrategy(file: TFile): Promise<void> {
+        const {
+            templateHeading,
+            deleteOnComplete,
+            removeEmptyTodos,
+            deleteFinishedOnComplete,
+        } = this.settings;
 
-                // If template heading is selected, try to rollover to template heading
-                if (templateHeadingSelected) {
-                    const contentAddedToHeading = dailyNoteContent.replace(
-                        templateHeading,
-                        `${templateHeading}${todos_todayString}`
-                    );
-                    if (contentAddedToHeading == dailyNoteContent) {
-                        templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading}' in today's daily not. Rolling todos to end of file.`;
-                    } else {
-                        dailyNoteContent = contentAddedToHeading;
-                    }
-                }
+        // check if there is a daily note from yesterday
+        const lastDailyNote = this.getLastDailyNote();
+        if (!lastDailyNote) return;
 
-                // Rollover to bottom of file if no heading found in file, or no heading selected
-                if (
-                    !templateHeadingSelected ||
-                    templateHeadingNotFoundMessage.length > 0
-                ) {
-                    dailyNoteContent += todos_todayString;
-                }
+        // TODO: Rollover to subheadings (optional)
+        //this.sortHeadersIntoHierarchy(lastDailyNote)
 
-                await this.app.vault.modify(file, dailyNoteContent);
-            }
+        // get unfinished todos from yesterday, if exist
+        // BUG here where getting all unfinished todos means that the first item is missing when it is being read.
+        let todos_yesterday = await this.getAllUnfinishedTodos(lastDailyNote);
+        let complexTodos = await this.getAllComplexTodos(lastDailyNote);
 
-            // if deleteOnComplete, get yesterday's content and modify it
-            if (deleteOnComplete) {
-                let lastDailyNoteContent = await this.app.vault.read(
-                    lastDailyNote
-                );
-                undoHistoryInstance.previousDay = {
-                    file: lastDailyNote,
-                    oldContent: `${lastDailyNoteContent}`,
-                };
-                let lines = lastDailyNoteContent.split("\n");
+        if (todos_yesterday.length == 0) {
+            return;
+        }
 
-                console.log({ todos_yesterday, lastDailyNote });
-                for (let z = lines.length; z >= 0; z--) {
-                    const current_line = lines[z];
-                    console.log({ current_line });
-                    if (todos_yesterday.includes(current_line)) {
-                        lines.splice(z, 1);
-                    }
-                }
+        // setup undo history
+        let undoHistoryInstance: UndoHistoryInstanceSpec = {
+            previousDay: {
+                file: undefined,
+                oldContent: "",
+            },
+            today: {
+                file: undefined,
+                oldContent: "",
+            },
+        };
 
-                const modifiedContent = lines.join("\n");
-                await this.app.vault.modify(lastDailyNote, modifiedContent);
-            }
-
-            // Let user know rollover has been successful with X todos
-            const todosAddedString =
-                todosAdded == 0
-                    ? ""
-                    : `- ${todosAdded} todo${
-                          todosAdded > 1 ? "s" : ""
-                      } rolled over.`;
-            const emptiesToNotAddToTomorrowString =
-                emptiesToNotAddToTomorrow == 0
-                    ? ""
-                    : deleteOnComplete
-                    ? `- ${emptiesToNotAddToTomorrow} empty todo${
-                          emptiesToNotAddToTomorrow > 1 ? "s" : ""
-                      } removed.`
-                    : "";
-            const part1 =
-                templateHeadingNotFoundMessage.length > 0
-                    ? `${templateHeadingNotFoundMessage}`
-                    : "";
-            const part2 = `${todosAddedString}${
-                todosAddedString.length > 0 ? " " : ""
-            }`;
-            const part3 = `${emptiesToNotAddToTomorrowString}${
-                emptiesToNotAddToTomorrowString.length > 0 ? " " : ""
-            }`;
-
-            let allParts = [part1, part2, part3];
-            let nonBlankLines: typeof allParts = [];
-            allParts.forEach((part) => {
-                if (part.length > 0) {
-                    nonBlankLines.push(part);
+        // Potentially filter todos from yesterday for today
+        let todosAdded = 0;
+        let emptiesToNotAddToTomorrow = 0;
+        let todos_today = removeEmptyTodos === false ? todos_yesterday : [];
+        if (removeEmptyTodos) {
+            todos_yesterday.forEach((line, i) => {
+                const trimmedLine = (line || "").trim();
+                if (trimmedLine != "- [ ]" && trimmedLine != "- [  ]") {
+                    todos_today.push(line);
+                    todosAdded++;
+                } else {
+                    emptiesToNotAddToTomorrow++;
                 }
             });
-
-            const message = nonBlankLines.join("\n");
-            if (message.length > 0) {
-                new Notice(message, 4000 + message.length * 3);
-            }
-            this.undoHistoryTime = new Date();
-            this.undoHistory = [undoHistoryInstance];
+        } else {
+            todosAdded = todos_yesterday.length;
         }
+
+        const rootFamilies =
+            this.scrapeComplexTodosForPendingRootFamily(complexTodos);
+        // get today's content and modify it
+        let templateHeadingNotFoundMessage = "";
+        const templateHeadingSelected = templateHeading !== "none";
+
+        if (rootFamilies.length > 0) {
+            let dailyNoteContent = await this.app.vault.read(file);
+            undoHistoryInstance.today = {
+                file: file,
+                oldContent: `${dailyNoteContent}`,
+            };
+            const todos_todayString = `\n${rootFamilies
+                .map(({ text }) => text)
+                .join("\n")}`;
+
+            // If template heading is selected, try to rollover to template heading
+            if (templateHeadingSelected) {
+                const contentAddedToHeading = dailyNoteContent.replace(
+                    templateHeading,
+                    `${templateHeading}${todos_todayString}`
+                );
+                if (contentAddedToHeading == dailyNoteContent) {
+                    templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading}' in today's daily not. Rolling todos to end of file.`;
+                } else {
+                    dailyNoteContent = contentAddedToHeading;
+                }
+            }
+
+            // Rollover to bottom of file if no heading found in file, or no heading selected
+            if (
+                !templateHeadingSelected ||
+                templateHeadingNotFoundMessage.length > 0
+            ) {
+                dailyNoteContent += todos_todayString;
+            }
+
+            await this.app.vault.modify(file, dailyNoteContent);
+        }
+
+        // if deleteOnComplete, get yesterday's content and modify it
+        // deletes all unchecked todos from yesterday
+        if (deleteOnComplete) {
+            let lastDailyNoteContent = await this.app.vault.read(lastDailyNote);
+            undoHistoryInstance.previousDay = {
+                file: lastDailyNote,
+                oldContent: `${lastDailyNoteContent}`,
+            };
+            let lines = lastDailyNoteContent.split("\n");
+
+            for (let z = lines.length; z >= 0; z--) {
+                const current_line = lines[z];
+
+                if (todos_yesterday.includes(current_line)) {
+                    lines.splice(z, 1);
+                }
+            }
+
+            const modifiedContent = lines.join("\n");
+            await this.app.vault.modify(lastDailyNote, modifiedContent);
+        }
+
+        // deletes all completed todos from yesterday
+        if (deleteFinishedOnComplete) {
+            let lastDailyNoteContent = await this.app.vault.read(lastDailyNote);
+            undoHistoryInstance.previousDay = {
+                file: lastDailyNote,
+                oldContent: `${lastDailyNoteContent}`,
+            };
+            let lines = lastDailyNoteContent.split("\n");
+            const deleteIndexes = [];
+            const targetTodos = [];
+            let keep = 0;
+            for (let i = 0; i < complexTodos.length; i++) {
+                const complexTodo = complexTodos[i];
+                if (complexTodo.type === "done") {
+                    keep = 1;
+                }
+                if (complexTodo.type === "pending") {
+                    keep = -1;
+                }
+                console.log({
+                    complexTodo,
+                    complexTodos,
+                    keep,
+                    i,
+                    targetTodos,
+                });
+                if (keep > 0) {
+                    targetTodos.push(complexTodo);
+                }
+            }
+            const targetTexts = targetTodos.map(({ text }) => text);
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                if (targetTexts.includes(line)) {
+                    deleteIndexes.push(i);
+                }
+            }
+
+            for (const deleteIndex of deleteIndexes) {
+                lines[deleteIndex] = null;
+            }
+            // FEATURE Should delete old stuff
+            await this.app.vault.modify(
+                lastDailyNote,
+                lines.filter(Boolean).join("\n")
+            );
+            // await this.app.vault.modify(lastDailyNote, modifiedContent);
+        }
+
+        // Let user know rollover has been successful with X todos
+        const todosAddedString =
+            todosAdded == 0
+                ? ""
+                : `- ${todosAdded} todo${
+                      todosAdded > 1 ? "s" : ""
+                  } rolled over.`;
+        const emptiesToNotAddToTomorrowString =
+            emptiesToNotAddToTomorrow == 0
+                ? ""
+                : deleteOnComplete
+                ? `- ${emptiesToNotAddToTomorrow} empty todo${
+                      emptiesToNotAddToTomorrow > 1 ? "s" : ""
+                  } removed.`
+                : "";
+        const part1 =
+            templateHeadingNotFoundMessage.length > 0
+                ? `${templateHeadingNotFoundMessage}`
+                : "";
+        const part2 = `${todosAddedString}${
+            todosAddedString.length > 0 ? " " : ""
+        }`;
+        const part3 = `${emptiesToNotAddToTomorrowString}${
+            emptiesToNotAddToTomorrowString.length > 0 ? " " : ""
+        }`;
+
+        let allParts = [part1, part2, part3];
+        let nonBlankLines: typeof allParts = [];
+        allParts.forEach((part) => {
+            if (part.length > 0) {
+                nonBlankLines.push(part);
+            }
+        });
+
+        const message = nonBlankLines.join("\n");
+        if (message.length > 0) {
+            new Notice(message, 4000 + message.length * 3);
+        }
+        this.undoHistoryTime = new Date();
+        this.undoHistory = [undoHistoryInstance];
     }
 
     async onload() {
