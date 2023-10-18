@@ -1,31 +1,58 @@
 {
-  "name": "obsidian-rollover-daily-todos",
-  "version": "1.1.7",
-  "description": "This Obsidian.md plugin rolls over incomplete TODOs from the previous daily note to today's daily note. (https://obsidian.md)",
-  "main": "main.js",
-  "scripts": {
-    "dev": "rollup -c -w",
-    "build": "rollup -c --environment BUILD:production",
-    "test": "vitest",
-    "format": "prettier --write ."
-  },
-  "cspell": {
-    "words": [
-      "todos"
-    ]
-  },
-  "keywords": [],
-  "author": "Lukas Mölschl",
-  "license": "MIT",
-  "devDependencies": {
-    "@rollup/plugin-commonjs": "^15.1.0",
-    "@rollup/plugin-node-resolve": "^9.0.0",
-    "obsidian": "https://github.com/obsidianmd/obsidian-api/tarball/master",
-    "rollup": "^2.32.1",
-    "vitest": "^0.25.7",
-    "prettier": "^2.8.1"
-  },
-  "dependencies": {
-    "obsidian-daily-notes-interface": "^0.9.2"
-  }
+    "name": "obsidian-rollover-daily-todos",
+    "version": "1.1.7",
+    "description": "This Obsidian.md plugin rolls over incomplete TODOs from the previous daily note to today's daily note. (https://obsidian.md)",
+    "main": "src/main.ts",
+    "scripts": {
+        "dev": "rollup -c -w",
+        "build": "rollup -c --environment BUILD:production",
+        "test": "vitest",
+        "format": "prettier --write .",
+        "dev:es": "tsx ./esbuild.config.ts",
+        "build:es": "tsx ./esbuild.config.ts prod",
+        "dev:es-live": "tsx ./esbuild.config.ts livedev",
+        "tsx": "tsx"
+    },
+    "cspell": {
+        "ignorePaths": [
+            "./fophidian.ts",
+            "package.json",
+            "tsconfig.json"
+        ],
+        "words": [
+            "todos",
+            "codemirror",
+            "Lukas Mölschl"
+        ]
+    },
+    "keywords": [],
+    "author": "Lukas Mölschl",
+    "license": "MIT",
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^15.1.0",
+        "@rollup/plugin-node-resolve": "^9.0.0",
+        "@types/codemirror": "^5.60.10",
+        "@types/fs-extra": "^11.0.2",
+        "@types/node": "^20.8.6",
+        "builtin-modules": "^3.3.0",
+        "copy-newer": "^2.1.2",
+        "dotenv": "^16.3.1",
+        "esbuild": "^0.19.4",
+        "esbuild-plugin-copy": "^2.1.1",
+        "esbuild-sass-plugin": "^2.16.0",
+        "fs-extra": "^11.1.1",
+        "moment": "2.29.4",
+        "prettier": "^2.8.1",
+        "rollup": "^2.32.1",
+        "sass": "^1.69.3",
+        "tslib": "^2.6.2",
+        "tsx": "^3.13.0",
+        "vitest": "^0.25.7"
+    },
+    "dependencies": {
+        "@codemirror/state": "^6.3.0",
+        "@codemirror/view": "^6.21.3",
+        "obsidian": "^1.4.11",
+        "obsidian-daily-notes-interface": "^0.9.2"
+    }
 }
