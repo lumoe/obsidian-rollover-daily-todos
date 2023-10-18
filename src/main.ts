@@ -519,11 +519,9 @@ export default class RolloverTodosPlugin extends Plugin {
             this.app.vault.on("create", async (file: TAbstractFile) => {
                 // Check if automatic daily note creation is enabled
                 // if (!this.settings.rolloverOnFileCreate) return;
-                setTimeout(() => {
-                    if (file instanceof TFile) {
-                        this.rollover(file);
-                    }
-                }, 3000);
+                if (file instanceof TFile) {
+                    this.rollover(file);
+                }
             })
         );
 
