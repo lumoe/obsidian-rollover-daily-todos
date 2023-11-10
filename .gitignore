@@ -18,3 +18,31 @@ data.json
 
 # local developer scripts
 deployLocally.js
+
+# Intellij
+*.iml
+.idea
+
+# npm
+node_modules
+package-lock.json
+
+# build
+main.js
+*.js.map
+
+# obsidian dev files
+data.json
+
+# macOS
+.DS_Store
+
+# local developer scripts
+deployLocally.js
+
+dist/
+.hotreload
+.env
+.vscode
+.in
+.out
