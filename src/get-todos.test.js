@@ -40,6 +40,33 @@ test("get todos with children", function () {
   expect(todos).toStrictEqual(result);
 });
 
+test("get todos (with alternate symbols) with children", function () {
+  // GIVEN
+  const lines = [
+    "+ [ ] TODO",
+    "    + [ ] Next",
+    "    * some stuff",
+    "* [ ] Another one",
+    "    - [ ] More children",
+    "    + another child",
+    "- this isn't copied",
+  ];
+
+  // WHEN
+  const todos = getTodos({ lines: lines, withChildren: true });
+
+  // THEN
+  const result = [
+    "+ [ ] TODO",
+    "    + [ ] Next",
+    "    * some stuff",
+    "* [ ] Another one",
+    "    - [ ] More children",
+    "    + another child",
+  ];
+  expect(todos).toStrictEqual(result);
+});
+
 test("get todos without children", () => {
   // GIVEN
   const lines = [

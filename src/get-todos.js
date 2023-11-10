@@ -1,4 +1,7 @@
 class TodoParser {
+  // Support all unordered list bullet symbols as per spec (https://daringfireball.net/projects/markdown/syntax#list)
+  bulletSymbols = ["-", "*", "+"];
+
   // List of strings that include the Markdown content
   #lines;
 
@@ -12,7 +15,7 @@ class TodoParser {
 
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    const r = /\s*- \[ \].*/g;
+    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[ \\].*`, "g"); // /\s*[-*+] \[ \].*/g;
     return r.test(s);
   }
 

@@ -55,7 +55,7 @@ By default, this plugin will roll over anything that has a checkbox, whether it 
 
 1. Sometimes you will use this plugin, and your unfinished todos will stay in the same spot. These could be formatting issues.
 
-- Regex is used to search for unfinished todos: `/\t*- \[ \].*/g`
+- Regex is used to search for unfinished todos: `/\s*[-*+] \[ \].*/g`
 - At a minimum, they need to look like: `start of line | tabs`-` `[` `]`Your text goes here`
 - If you use spaces instead of tabs at the start of the line, the behavior of the plugin can be inconsistent. Sometimes it'll roll items over, but not delete them from the previous day when you have that option toggled on.
 
