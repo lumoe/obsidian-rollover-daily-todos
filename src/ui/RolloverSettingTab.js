@@ -101,6 +101,20 @@ export default class RolloverSettingTab extends PluginSettingTab {
       );
 
     new Setting(this.containerEl)
+      .setName("Skip existing todos in rollover")
+      .setDesc(
+        `If a todo from yesterday already exists in todays note, do not roll it over.`
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.skipExistingTodos || false)
+          .onChange((value) => {
+            this.plugin.settings.skipExistingTodos = value;
+            this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(this.containerEl)
       .setName("Roll over children of todos")
       .setDesc(
         `By default, only the actual todos are rolled over. If you add nested Markdown-elements beneath your todos, these are not rolled over but stay in place, possibly altering the logic of your previous note. This setting allows for also migrating the nested elements.`
