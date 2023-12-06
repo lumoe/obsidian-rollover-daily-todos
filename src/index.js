@@ -43,6 +43,8 @@ export default class RolloverTodosPlugin extends Plugin {
     const DEFAULT_SETTINGS = {
       templateHeading: "none",
       deleteOnComplete: false,
+      // only relevant if !deleteOnComplete
+      cancelOnComplete: false,
       removeEmptyTodos: false,
       rolloverChildren: false,
       rolloverOnFileCreate: true,
@@ -195,7 +197,7 @@ export default class RolloverTodosPlugin extends Plugin {
         10000
       );
     } else {
-      const { templateHeading, deleteOnComplete, removeEmptyTodos } =
+      const { templateHeading, deleteOnComplete, cancelOnComplete, removeEmptyTodos } =
         this.settings;
 
       // check if there is a daily note from yesterday
@@ -294,6 +296,25 @@ export default class RolloverTodosPlugin extends Plugin {
         for (let i = lines.length; i >= 0; i--) {
           if (todos_yesterday.includes(lines[i])) {
             lines.splice(i, 1);
+          }
+        }
+
+        const modifiedContent = lines.join("\n");
+        await this.app.vault.modify(lastDailyNote, modifiedContent);
+      } else if (cancelOnComplete) {
+        // if deleteOnComplete, get yesterday's content and modify it to mark tasks as completed
+        let lastDailyNoteContent = await this.app.vault.read(lastDailyNote);
+        undoHistoryInstance.previousDay = {
+          file: lastDailyNote,
+          oldContent: `${lastDailyNoteContent}`,
+        };
+        let lines = lastDailyNoteContent.split("\n");
+
+        // Update the status of todos from yesterday
+        for (let i = 0; i < lines.length; i++) {
+          if (todos_yesterday.includes(lines[i])) {
+            // Change the task status to '- [-]'
+            lines[i] = lines[i].replace("- [ ]", "- [-]");
           }
         }
 

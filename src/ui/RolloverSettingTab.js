@@ -52,19 +52,39 @@ export default class RolloverSettingTab extends PluginSettingTab {
           })
       );
 
-    new Setting(this.containerEl)
-      .setName("Delete todos from previous day")
+    if (!this.plugin.settings.cancelOnComplete) {
+      new Setting(this.containerEl)
+        .setName("Delete todos from previous day")
+        .setDesc(
+          `Once todos are found, they are added to Today's Daily Note. If successful, they are deleted from Yesterday's Daily note. Enabling this is destructive and may result in lost data. Keeping this disabled will simply duplicate them from yesterday's note and place them in the appropriate section. Note that currently, duplicate todos will be deleted regardless of what heading they are in, and which heading you choose from above.`
+        )
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.deleteOnComplete || false)
+            .onChange((value) => {
+              this.plugin.settings.deleteOnComplete = value;
+              this.plugin.saveSettings();
+              this.display()
+            })
+        );
+    }
+
+    if (!this.plugin.settings.deleteOnComplete) {
+      new Setting(this.containerEl)
+      .setName("Cancel todos from previous day")
       .setDesc(
-        `Once todos are found, they are added to Today's Daily Note. If successful, they are deleted from Yesterday's Daily note. Enabling this is destructive and may result in lost data. Keeping this disabled will simply duplicate them from yesterday's note and place them in the appropriate section. Note that currently, duplicate todos will be deleted regardless of what heading they are in, and which heading you choose from above.`
+        `Once todos are found, they are added to Today's Daily Note. If successful, they are cancelled from Yesterday's Daily note (status changed to [-]. Enabling this is destructive and may result in lost data. Keeping this disabled will simply duplicate them from yesterday's note and place them in the appropriate section. Note that currently, duplicate todos will be deleted regardless of what heading they are in, and which heading you choose from above.`
       )
       .addToggle((toggle) =>
         toggle
-          .setValue(this.plugin.settings.deleteOnComplete || false)
+          .setValue(this.plugin.settings.cancelOnComplete || false)
           .onChange((value) => {
-            this.plugin.settings.deleteOnComplete = value;
+            this.plugin.settings.cancelOnComplete = value;
             this.plugin.saveSettings();
+            this.display();
           })
       );
+    }
 
     new Setting(this.containerEl)
       .setName("Remove empty todos in rollover")
