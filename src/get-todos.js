@@ -1,4 +1,7 @@
 class TodoParser {
+  // Support all unordered list bullet symbols as per spec (https://daringfireball.net/projects/markdown/syntax#list)
+  bulletSymbols = ["-", "*", "+"];
+
   // List of strings that include the Markdown content
   #lines;
 
@@ -12,7 +15,7 @@ class TodoParser {
 
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    const r = /\s*- \[[^xX-]\].*/g;
+    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^xX-]\\].*`, "g"); // /\s*[-*+] \[[^xX-]\].*/g;
     return r.test(s);
   }
 
@@ -33,7 +36,7 @@ class TodoParser {
   #getChildren(parentLinum) {
     const children = [];
     let nextLinum = parentLinum + 1;
-    while (this.#isChildof(parentLinum, nextLinum)) {
+    while (this.#isChildOf(parentLinum, nextLinum)) {
       children.push(this.#lines[nextLinum]);
       nextLinum++;
     }
@@ -41,7 +44,7 @@ class TodoParser {
   }
 
   // Returns true if line `linum` has more indentation than line `parentLinum`
-  #isChildof(parentLinum, linum) {
+  #isChildOf(parentLinum, linum) {
     if (parentLinum >= this.#lines.length || linum >= this.#lines.length) {
       return false;
     }

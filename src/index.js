@@ -45,6 +45,7 @@ export default class RolloverTodosPlugin extends Plugin {
       deleteOnComplete: false,
       removeEmptyTodos: false,
       rolloverChildren: false,
+      rolloverOnFileCreate: true,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -69,25 +70,32 @@ export default class RolloverTodosPlugin extends Plugin {
     let { folder, format } = getDailyNoteSettings();
 
     folder = this.getCleanFolder(folder);
+    folder = folder.length === 0 ? folder : folder + "/";
+
+    const dailyNoteRegexMatch = new RegExp("^" + folder + "(.*).md$");
+    const todayMoment = moment();
 
     // get all notes in directory that aren't null
     const dailyNoteFiles = this.app.vault
-      .getAllLoadedFiles()
+      .getMarkdownFiles()
       .filter((file) => file.path.startsWith(folder))
-      .filter((file) => file.basename != null);
-
-    // remove notes that are from the future
-    const todayMoment = moment();
-    const dailyNotesTodayOrEarlier = dailyNoteFiles.filter(
-      (file) =>
+      .filter((file) =>
+        moment(
+          file.path.replace(dailyNoteRegexMatch, "$1"),
+          format,
+          true
+        ).isValid()
+      )
+      .filter((file) => file.basename)
+      .filter((file) =>
         this.getFileMoment(file, folder, format).isSameOrBefore(
           todayMoment,
           "day"
-        ) && moment(file.basename, format, true).isValid()
-    );
+        )
+      );
 
     // sort by date
-    const sorted = dailyNotesTodayOrEarlier.sort(
+    const sorted = dailyNoteFiles.sort(
       (a, b) =>
         this.getFileMoment(b, folder, format).valueOf() -
         this.getFileMoment(a, folder, format).valueOf()
@@ -98,9 +106,9 @@ export default class RolloverTodosPlugin extends Plugin {
   getFileMoment(file, folder, format) {
     let path = file.path;
 
-    if (path.startsWith(`${folder}/`)) {
+    if (path.startsWith(folder)) {
       // Remove length of folder from start of path
-      path = path.substring(folder.length + 1);
+      path = path.substring(folder.length);
     }
 
     if (path.endsWith(`.${file.extension}`)) {
@@ -121,7 +129,7 @@ export default class RolloverTodosPlugin extends Plugin {
     });
   }
 
-  async sortHeadersIntoHeirarchy(file) {
+  async sortHeadersIntoHierarchy(file) {
     ///console.log('testing')
     const templateContents = await this.app.vault.read(file);
     const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(
@@ -192,17 +200,19 @@ export default class RolloverTodosPlugin extends Plugin {
 
       // check if there is a daily note from yesterday
       const lastDailyNote = this.getLastDailyNote();
-      if (lastDailyNote == null) return;
+      if (!lastDailyNote) return;
 
       // TODO: Rollover to subheadings (optional)
-      //this.sortHeadersIntoHeirarchy(lastDailyNote)
+      //this.sortHeadersIntoHierarchy(lastDailyNote)
 
       // get unfinished todos from yesterday, if exist
       let todos_yesterday = await this.getAllUnfinishedTodos(lastDailyNote);
+
+      console.log(
+        `rollover-daily-todos: ${todos_yesterday.length} todos found in ${lastDailyNote.basename}.md`
+      );
+
       if (todos_yesterday.length == 0) {
-        console.log(
-          `rollover-daily-todos: 0 todos found in ${lastDailyNote.basename}.md`
-        );
         return;
       }
 
@@ -341,6 +351,8 @@ export default class RolloverTodosPlugin extends Plugin {
 
     this.registerEvent(
       this.app.vault.on("create", async (file) => {
+        // Check if automatic daily note creation is enabled
+        if (!this.settings.rolloverOnFileCreate) return;
         this.rollover(file);
       })
     );
@@ -348,7 +360,9 @@ export default class RolloverTodosPlugin extends Plugin {
     this.addCommand({
       id: "obsidian-rollover-daily-todos-rollover",
       name: "Rollover Todos Now",
-      callback: () => this.rollover(),
+      callback: () => {
+        this.rollover();
+      },
     });
 
     this.addCommand({

@@ -1,6 +1,6 @@
 {
   "name": "obsidian-rollover-daily-todos",
-  "version": "1.1.3",
+  "version": "1.1.7",
   "description": "This Obsidian.md plugin rolls over incomplete TODOs from the previous daily note to today's daily note. (https://obsidian.md)",
   "main": "main.js",
   "scripts": {
@@ -9,8 +9,13 @@
     "test": "vitest",
     "format": "prettier --write ."
   },
+  "cspell": {
+    "words": [
+      "todos"
+    ]
+  },
   "keywords": [],
-  "author": "Matthew Sessions",
+  "author": "Lukas Mölschl",
   "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^15.1.0",

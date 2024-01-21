@@ -41,8 +41,8 @@ export default class UndoModal extends Modal {
   async onOpen() {
     let { contentEl, plugin } = this
     contentEl.createEl('h3', { text: 'Undo last rollover' });
-    contentEl.createEl('div', { text: 'A single rollover command can be undone, which will load the state of the two files modified (or 1 if the delete option is toggled off) before the rollover first occured. Any text you may have added from those file(s) during that time may be deleted.' });
-    contentEl.createEl('div', { text: 'Note that rollover actions can only be undone for up to 2 minutes after the command occured, and will be removed from history if the app closes.' })
+    contentEl.createEl('div', { text: 'A single rollover command can be undone, which will load the state of the two files modified (or 1 if the delete option is toggled off) before the rollover first occurred. Any text you may have added from those file(s) during that time may be deleted.' });
+    contentEl.createEl('div', { text: 'Note that rollover actions can only be undone for up to 2 minutes after the command occurred, and will be removed from history if the app closes.' })
     contentEl.createEl('h4', { text: 'Changes made with undo:' })
 
     const undoHistoryInstance = plugin.undoHistory[0]

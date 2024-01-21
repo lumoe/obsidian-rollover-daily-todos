@@ -76,6 +76,83 @@ test("get todos with children", function () {
   expect(todos).toStrictEqual(result);
 });
 
+test("get todos (with alternate symbols) with children", function () {
+  // GIVEN
+  const lines = [
+    "+ [ ] TODO",
+    "    + [ ] Next",
+    "    * some stuff",
+    "* [ ] Another one",
+    "    - [ ] More children",
+    "    + another child",
+    "- this isn't copied",
+  ];
+
+  // WHEN
+  const todos = getTodos({ lines: lines, withChildren: true });
+
+  // THEN
+  const result = [
+    "+ [ ] TODO",
+    "    + [ ] Next",
+    "    * some stuff",
+    "* [ ] Another one",
+    "    - [ ] More children",
+    "    + another child",
+  ];
+  expect(todos).toStrictEqual(result);
+});
+
+test("get todos (with alternate symbols and partially checked todos) with children", function () {
+  // GIVEN
+  const lines = [
+    "+ [x] Completed TODO",
+    "    + [ ] Next",
+    "    * some stuff",
+    "* [ ] Another one",
+    "    - [x] Completed child",
+    "    + another child",
+    "- this isn't copied",
+  ];
+
+  // WHEN
+  const todos = getTodos({ lines: lines, withChildren: true });
+
+  // THEN
+  const result = [
+    "    + [ ] Next",
+    "* [ ] Another one",
+    "    - [x] Completed child",
+    "    + another child",
+  ];
+  expect(todos).toStrictEqual(result);
+});
+
+test("get todos (with default dash prefix and finished todos) with children", function () {
+  // GIVEN
+  const lines = [
+    "- [x] Completed TODO",
+    "    - [ ] Next",
+    "    * some stuff",
+    "- [ ] Another one",
+    "    - [x] Completed child",
+    "    + another child",
+    "* this isn't copied",
+  ];
+
+  // WHEN
+  const todos = getTodos({ lines: lines, withChildren: true });
+
+  // THEN
+  const result = [
+    "    - [ ] Next",
+    "- [ ] Another one",
+    "    - [x] Completed child",
+    "    + another child",
+  ];
+  expect(todos).toStrictEqual(result);
+});
+
 test("get todos without children", () => {
   // GIVEN
   const lines = [

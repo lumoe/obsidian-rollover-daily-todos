@@ -12,8 +12,14 @@ export default class RolloverSettingTab extends PluginSettingTab {
     if (!template) return [];
 
     let file = this.app.vault.getAbstractFileByPath(template);
-    if (file == null) {
+
+    if (file === null) {
       file = this.app.vault.getAbstractFileByPath(template + ".md");
+    }
+
+    if (file === null) {
+      // file not available, no template-heading can be returned
+      return [];
     }
 
     const templateContents = await this.app.vault.read(file);
@@ -85,6 +91,28 @@ export default class RolloverSettingTab extends PluginSettingTab {
           .onChange((value) => {
             this.plugin.settings.rolloverChildren = value;
             this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(this.containerEl)
+      .setName("Automatic rollover on daily note open")
+      .setDesc(
+        `If enabled, the plugin will automatically rollover todos when you open a daily note.`
+      )
+      .addToggle((toggle) =>
+        toggle
+          // Default to true if the setting is not set
+          .setValue(
+            this.plugin.settings.rolloverOnFileCreate === undefined ||
+              this.plugin.settings.rolloverOnFileCreate === null
+              ? true
+              : this.plugin.settings.rolloverOnFileCreate
+          )
+          .onChange((value) => {
+            console.log(value);
+            this.plugin.settings.rolloverOnFileCreate = value;
+            this.plugin.saveSettings();
+            this.plugin.loadData().then((value) => console.log(value));
           })
       );
   }
