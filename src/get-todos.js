@@ -15,7 +15,7 @@ class TodoParser {
 
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[ \\].*`, "g"); // /\s*[-*+] \[ \].*/g;
+    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^xX-]\\].*`, "g"); // /\s*[-*+] \[[^xX-]\].*/g;
     return r.test(s);
   }
 

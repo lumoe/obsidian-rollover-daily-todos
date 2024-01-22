@@ -13,6 +13,42 @@ test("single todo element should return itself", () => {
   expect(result).toStrictEqual(todos);
 });
 
+test("single incomplete element should return itself", () => {
+  // GIVEN
+  const lines = ["- [/] tada"];
+
+  // WHEN
+  const result = getTodos({ lines });
+
+  // THEN
+  const todos = ["- [/] tada"];
+  expect(result).toStrictEqual(todos);
+});
+
+test("single done todo element should not return itself", () => {
+  // GIVEN
+  const lines = ["- [x] tada"];
+
+  // WHEN
+  const result = getTodos({ lines });
+
+  // THEN
+  const todos = [""];
+  expect(result).toStrictEqual(todos);
+});
+
+test("single canceled todo element should not return itself", () => {
+  // GIVEN
+  const lines = ["- [-] tada"];
+
+  // WHEN
+  const result = getTodos({ lines });
+
+  // THEN
+  const todos = [""];
+  expect(result).toStrictEqual(todos);
+});
+
 test("get todos with children", function () {
   // GIVEN
   const lines = [
@@ -142,6 +178,35 @@ test("get todos without children", () => {
   expect(todos).toStrictEqual(result);
 });
 
+test("get todos with correct alternate checkbox children", function () {
+  // GIVEN
+  const lines = [
+    "- [ ] TODO",
+    "    - [ ] Next",
+    "    - [x] Completed task",
+    "    - some stuff",
+    "- [ ] Another one",
+    "    - [ ] Another child",
+    "    - [/] More children",
+    "    - another child",
+    "- this isn't copied",
+  ];
+
+  // WHEN
+  const todos = getTodos({ lines: lines, withChildren: true });
+
+  // THEN
+  const result = [
+    "- [ ] TODO",
+    "    - [ ] Next",
+    "    - some stuff",
+    "- [ ] Another one",
+    "    - [ ] Another child",
+    "    - [/] More children",
+    "    - another child",
+  ];
+  expect(todos).toStrictEqual(result);
+});
 test("get todos with children doesn't fail if child at end of list", () => {
   // GIVEN
   const lines = [
