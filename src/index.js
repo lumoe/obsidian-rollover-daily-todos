@@ -46,6 +46,7 @@ export default class RolloverTodosPlugin extends Plugin {
       removeEmptyTodos: false,
       rolloverChildren: false,
       rolloverOnFileCreate: true,
+      rolloverSubheadings: false,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -126,6 +127,7 @@ export default class RolloverTodosPlugin extends Plugin {
     return getTodos({
       lines: dnLines,
       withChildren: this.settings.rolloverChildren,
+      withSubHeadings: this.settings.rolloverSubheadings,
     });
   }
 
