@@ -8,8 +8,8 @@ class TodoParser {
   // Boolean that encodes whether nested items should be rolled over
   #withChildren;
 
-  // Boolean that encodes whether sub-headings of nested items should be rolled over. Only relevant when #withChildren is true.
-  #withSubheadings;
+  // Boolean that encodes whether headings should be rolled over.
+  #withHeadings;
 
   // Boolean that encodes whether bullets should be rolled over.
   #withBullets;
@@ -20,10 +20,10 @@ class TodoParser {
   // Boolean that encodes whether completed children should be rolled over. Only relevant when #withChildren is true and #filterChildren is true.
   #withCompletedChildren;
 
-  constructor(lines, withChildren, withSubheadings, withBullets, filterChildren, withCompletedChildren) {
+  constructor(lines, withChildren, withHeadings, withBullets, filterChildren, withCompletedChildren) {
     this.#lines = lines;
     this.#withChildren = withChildren;
-    this.#withSubheadings = withChildren && withSubheadings;
+    this.#withHeadings = withHeadings;
     this.#withBullets = withBullets;
     this.#filterChildren = filterChildren;
     this.#withCompletedChildren = withCompletedChildren;
@@ -95,11 +95,15 @@ class TodoParser {
       return true;
     }
 
+    if (this.#withHeadings && this.#isHeading(line)) {
+      return true;
+    }
+
     if (this.#withBullets) {
       return this.#isBullet(line);
     }
 
-    return this.#withSubheadings && this.#isHeading(line);
+    return false;
   }
 
   // Returns a list of strings that represents all the todos along with there potential children
@@ -107,7 +111,7 @@ class TodoParser {
     let todos = [];
     for (let l = 0; l < this.#lines.length; l++) {
       const line = this.#lines[l];
-      if (this.#isTodo(line) || (l !== 0 && this.#withSubheadings && this.#isHeading(line)) || (this.#withBullets && this.#isBullet(line))) {
+      if (this.isRelevant(line)) {
         todos.push(line);
         if (this.#withChildren && this.#hasChildren(l)) {
           const cs = this.#getChildren(l).filter(c => {
@@ -126,7 +130,7 @@ class TodoParser {
 }
 
 // Utility-function that acts as a thin wrapper around `TodoParser`
-export const getTodos = ({ lines, withChildren = false , withSubHeadings = false, withBullets = false, filterChildren = false, withCompletedChildren = true}) => {
-  const todoParser = new TodoParser(lines, withChildren, withSubHeadings, withBullets, filterChildren, withCompletedChildren);
+export const getTodos = ({ lines, withChildren = false , withHeadings = false, withBullets = false, filterChildren = false, withCompletedChildren = true}) => {
+  const todoParser = new TodoParser(lines, withChildren, withHeadings, withBullets, filterChildren, withCompletedChildren);
   return todoParser.getTodos();
 };

@@ -357,7 +357,7 @@ test("get todos doesn't add intermediate other elements", () => {
   expect(todos).toStrictEqual(result);
 });
 
-test("get todos doesn't adds subheadings", () => {
+test("get todos doesn't add headings", () => {
   // GIVEN
   const lines = [
     "# Some title",
@@ -380,10 +380,11 @@ test("get todos doesn't adds subheadings", () => {
   ];
 
   // WHEN
-  const todos = getTodos({ lines, withChildren: true, withBullets: false, filterChildren: true, withSubHeadings: true});
+  const todos = getTodos({ lines, withChildren: true, withBullets: false, filterChildren: true, withHeadings: true});
 
   // THEN
   const result = [
+    "# Some title",
     "- [ ] TODO",
     "    - [ ] Next",
     "## Some title",
@@ -393,7 +394,7 @@ test("get todos doesn't adds subheadings", () => {
   expect(todos).toStrictEqual(result);
 });
 
-test("get todos doesn't adds subheadings and sub bullets", () => {
+test("get todos doesn't add headings and sub bullets", () => {
   // GIVEN
   const lines = [
     "# Some title",
@@ -416,10 +417,11 @@ test("get todos doesn't adds subheadings and sub bullets", () => {
   ];
 
   // WHEN
-  const todos = getTodos({ lines, withChildren: true, withBullets: true, filterChildren: true, withSubHeadings: true});
+  const todos = getTodos({ lines, withChildren: true, withBullets: true, filterChildren: true, withHeadings: true});
 
   // THEN
   const result = [
+    "# Some title",
     "- [ ] TODO",
     "    - [ ] Next",
     "    - some stuff",
@@ -457,10 +459,11 @@ test("get todos includes bullets", () => {
   ];
 
   // WHEN
-  const todos = getTodos({ lines, withChildren: true, withBullets: true, filterChildren: false, withSubHeadings: true});
+  const todos = getTodos({ lines, withChildren: true, withBullets: true, filterChildren: false, withHeadings: true});
 
   // THEN
   const result = [
+    "# Some title",
     "- bullet",
     "- [ ] TODO",
     "    - [ ] Next",

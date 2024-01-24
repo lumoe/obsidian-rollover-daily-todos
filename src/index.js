@@ -46,7 +46,7 @@ export default class RolloverTodosPlugin extends Plugin {
       removeEmptyTodos: false,
       rolloverChildren: false,
       rolloverOnFileCreate: true,
-      rolloverSubheadings: false,
+      rolloverHeadings: false,
       rolloverBullets: false,
       filterChildren: false,
       rolloverCompletedChildren: true,
@@ -130,7 +130,7 @@ export default class RolloverTodosPlugin extends Plugin {
     return getTodos({
       lines: dnLines,
       withChildren: this.settings.rolloverChildren,
-      withSubHeadings: this.settings.rolloverSubheadings,
+      withHeadings: this.settings.rolloverHeadings,
       withBullets: this.settings.rolloverBullets,
       filterChildren: this.settings.filterChildren,
       withCompletedChildren: this.settings.rolloverCompletedChildren,
