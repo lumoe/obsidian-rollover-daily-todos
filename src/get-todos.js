@@ -11,15 +11,39 @@ class TodoParser {
   // Boolean that encodes whether sub-headings of nested items should be rolled over. Only relevant when #withChildren is true.
   #withSubheadings;
 
-  constructor(lines, withChildren, withSubheadings) {
+  // Boolean that encodes whether bullets should be rolled over.
+  #withBullets;
+
+  // Boolean that encodes whether children should have existing filters applied
+  #filterChildren;
+
+  // Boolean that encodes whether completed children should be rolled over. Only relevant when #withChildren is true and #filterChildren is true.
+  #withCompletedChildren;
+
+  constructor(lines, withChildren, withSubheadings, withBullets, filterChildren, withCompletedChildren) {
     this.#lines = lines;
     this.#withChildren = withChildren;
     this.#withSubheadings = withChildren && withSubheadings;
+    this.#withBullets = withBullets;
+    this.#filterChildren = filterChildren;
+    this.#withCompletedChildren = withCompletedChildren;
   }
 
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^xX-]].*`, "g"); // /\s*[-*+] \[[^xX-]\].*/g;
+    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^xX-]\\].*`, "g"); // /\s*[-*+] \[[^xX-]\].*/g;
+    return r.test(s);
+  }
+
+  // Returns true if the string is a completed todo-item
+  #isCompletedTodo(s) {
+    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[xX-]\\].*`, "g"); // /\s*[-*+] \[[^xX-]\].*/g;
+    return r.test(s);
+  }
+
+  // Returns true if the string is a bulleted list item (optionally included as a todo-item)
+  #isBullet(s) {
+    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] (?!\\[[^xX]]).*`, "g"); // /\s*[-*+] \[[^xX-]\].*/g;
     return r.test(s);
   }
 
@@ -70,6 +94,11 @@ class TodoParser {
     if (this.#isTodo(line)) {
       return true;
     }
+
+    if (this.#withBullets) {
+      return this.#isBullet(line);
+    }
+
     return this.#withSubheadings && this.#isHeading(line);
   }
 
@@ -78,10 +107,18 @@ class TodoParser {
     let todos = [];
     for (let l = 0; l < this.#lines.length; l++) {
       const line = this.#lines[l];
-      if (this.#isTodo(line) || (l !== 0 && this.#withSubheadings && this.#isHeading(line))) {
+      if (this.#isTodo(line) || (l !== 0 && this.#withSubheadings && this.#isHeading(line)) || (this.#withBullets && this.#isBullet(line))) {
         todos.push(line);
         if (this.#withChildren && this.#hasChildren(l)) {
-          const cs = this.#getChildren(l).filter(c => this.isRelevant(c));
+          const cs = this.#getChildren(l).filter(c => {
+            if (!this.#withCompletedChildren && this.#isCompletedTodo(c)) {
+              return false;
+            }
+            if (this.#isCompletedTodo(c)) {
+              return true;
+            }
+            return (!this.#filterChildren || this.isRelevant(c));
+          });
           todos = [...todos, ...cs];
           l += cs.length;
         }
@@ -92,7 +129,7 @@ class TodoParser {
 }
 
 // Utility-function that acts as a thin wrapper around `TodoParser`
-export const getTodos = ({ lines, withChildren = false , withSubHeadings = false}) => {
-  const todoParser = new TodoParser(lines, withChildren, withSubHeadings);
+export const getTodos = ({ lines, withChildren = false , withSubHeadings = false, withBullets = false, filterChildren = false, withCompletedChildren = true}) => {
+  const todoParser = new TodoParser(lines, withChildren, withSubHeadings, withBullets, filterChildren, withCompletedChildren);
   return todoParser.getTodos();
 };

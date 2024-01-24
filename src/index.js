@@ -47,6 +47,9 @@ export default class RolloverTodosPlugin extends Plugin {
       rolloverChildren: false,
       rolloverOnFileCreate: true,
       rolloverSubheadings: false,
+      rolloverBullets: false,
+      filterChildren: false,
+      rolloverCompletedChildren: true,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -128,6 +131,9 @@ export default class RolloverTodosPlugin extends Plugin {
       lines: dnLines,
       withChildren: this.settings.rolloverChildren,
       withSubHeadings: this.settings.rolloverSubheadings,
+      withBullets: this.settings.rolloverBullets,
+      filterChildren: this.settings.filterChildren,
+      withCompletedChildren: this.settings.rolloverCompletedChildren,
     });
   }
 
