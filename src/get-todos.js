@@ -114,9 +114,6 @@ class TodoParser {
             if (!this.#withCompletedChildren && this.#isCompletedTodo(c)) {
               return false;
             }
-            if (this.#isCompletedTodo(c)) {
-              return true;
-            }
             return (!this.#filterChildren || this.isRelevant(c));
           });
           todos = [...todos, ...cs];
