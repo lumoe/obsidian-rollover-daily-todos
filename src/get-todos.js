@@ -1,6 +1,6 @@
 class TodoParser {
   // Support all unordered list bullet symbols as per spec (https://daringfireball.net/projects/markdown/syntax#list)
-  bulletSymbols = ["-", "*", "+"];
+  bulletSymbols = ["-", "*", "+", "#"];
 
   // List of strings that include the Markdown content
   #lines;
