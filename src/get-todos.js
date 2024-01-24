@@ -114,14 +114,15 @@ class TodoParser {
       if (this.isRelevant(line)) {
         todos.push(line);
         if (this.#withChildren && this.#hasChildren(l)) {
-          const cs = this.#getChildren(l).filter(c => {
+          const children = this.#getChildren(l);
+          const cs = children.filter(c => {
             if (!this.#withCompletedChildren && this.#isCompletedTodo(c)) {
               return false;
             }
             return (!this.#filterChildren || this.isRelevant(c));
           });
           todos = [...todos, ...cs];
-          l += cs.length;
+          l += children.length;
         }
       }
     }
