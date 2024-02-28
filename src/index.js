@@ -262,7 +262,7 @@ export default class RolloverTodosPlugin extends Plugin {
         if (templateHeadingSelected) {
           const contentAddedToHeading = dailyNoteContent.replace(
             templateHeading,
-            `${templateHeading}${todos_todayString}`
+            `${templateHeading}\n${todos_todayString}`
           );
           if (contentAddedToHeading == dailyNoteContent) {
             templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading}' in today's daily not. Rolling todos to end of file.`;
