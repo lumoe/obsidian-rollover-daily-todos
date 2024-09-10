@@ -53,6 +53,27 @@ export default class RolloverSettingTab extends PluginSettingTab {
       );
 
     new Setting(this.containerEl)
+      .setName("Daily Note heading")
+      .setDesc(
+        "Which heading from your daily note should the todos get grabbed from"
+      )
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOptions({
+            ...templateHeadings.reduce((acc, heading) => {
+              acc[heading] = heading;
+              return acc;
+            }, {}),
+            none: "None",
+          })
+          .setValue(this.plugin?.settings.dailyNoteHeading)
+          .onChange((value) => {
+            this.plugin.settings.dailyNoteHeading = value;
+            this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(this.containerEl)
       .setName("Delete todos from previous day")
       .setDesc(
         `Once todos are found, they are added to Today's Daily Note. If successful, they are deleted from Yesterday's Daily note. Enabling this is destructive and may result in lost data. Keeping this disabled will simply duplicate them from yesterday's note and place them in the appropriate section. Note that currently, duplicate todos will be deleted regardless of what heading they are in, and which heading you choose from above.`

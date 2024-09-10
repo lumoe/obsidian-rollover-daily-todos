@@ -42,6 +42,7 @@ export default class RolloverTodosPlugin extends Plugin {
   async loadSettings() {
     const DEFAULT_SETTINGS = {
       templateHeading: "none",
+      dailyNoteHeading: "none",
       deleteOnComplete: false,
       removeEmptyTodos: false,
       rolloverChildren: false,
@@ -126,6 +127,7 @@ export default class RolloverTodosPlugin extends Plugin {
     return getTodos({
       lines: dnLines,
       withChildren: this.settings.rolloverChildren,
+      dailyNoteHeading: this.settings.dailyNoteHeading,
     });
   }
 

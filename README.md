@@ -41,13 +41,21 @@ If you chose a template file to use for new daily notes in `Daily notes > Settin
 
 If you leave this field as blank, or select `None`, then incomplete todos will be rolled onto the end of today's note (for new notes with no template, the end is the beginning of the note).
 
-### 3. Delete todos from previous day
+### 3. Daily Note Heading
+
+This feature allows for detecting todo items that fall under specific headings using a Markdown structure with headings marked by 1 to 5 # symbols. When processing Markdown content, the parser will locate the closest heading above a todo item and check if it matches the desired heading.
+
+Note that todos are only considered if they are placed directly under the targeted heading, regardless of their indentation level or nesting. If no matching heading is found above the todo item, it will not be included in the results.
+
+This feature ensures that todos are correctly associated with the relevant section, allowing for more organized and precise task management in your daily notes.
+
+### 4. Delete todos from previous day
 
 By default, this plugin will actually make a copy of incomplete todos. So if you forgot to wash your dog yesterday, and didn't check it off, then you will have an incomplete checkmark on yesterday's daily note, and a new incomplete checkmark will be rolled into today's daily note. If you use the `Undo last rollover` command, deleted todos will be restored (remember, the `time limit on this is 2 minutes`).
 
 Toggling this setting on will remove incomplete todos from the previous daily note once today's daily note has a copy of them.
 
-### 4. Remove empty todos in rollover
+### 5. Remove empty todos in rollover
 
 By default, this plugin will roll over anything that has a checkbox, whether it has content or not. Toggling this setting on will ignore empty todos. If you have **#2** from above toggled on, it will also delete empty todos.
 
