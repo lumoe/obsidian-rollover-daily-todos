@@ -8,15 +8,53 @@ class TodoParser {
   // Boolean that encodes whether nested items should be rolled over
   #withChildren;
 
-  constructor(lines, withChildren) {
+  // string that defines the searched heading or none
+  #dailyNoteHeading;
+
+  constructor(lines, withChildren, dailyNoteHeading) {
     this.#lines = lines;
     this.#withChildren = withChildren;
+    this.#dailyNoteHeading = dailyNoteHeading;
   }
 
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^xX-]\\].*`, "g"); // /\s*[-*+] \[[^xX-]\].*/g;
+    const r = new RegExp(
+      `\\s*[${this.bulletSymbols.join("")}] \\[[^xX-]\\].*`,
+      "g"
+    ); // /\s*[-*+] \[[^xX-]\].*/g;
     return r.test(s);
+  }
+
+  // Returns true if the line is a todo item under the correct heading
+  #isChildOfHeading(line) {
+    // if not set its valid under every heading
+    if (this.#dailyNoteHeading === "none") {
+      return true;
+    }
+
+    let currentHeading = null;
+
+    // Regex to detect headings (e.g., ## or ###)
+    const headingRegex = /^#{1,}\s*(.+)/;
+
+    // Find the index of the current line
+    const lineIndex = this.#lines.indexOf(line);
+
+    // Iterate backwards from the current line to find the closest heading
+    for (let i = lineIndex; i >= 0; i--) {
+      const prevLine = this.#lines[i];
+      const headingMatch = prevLine.match(headingRegex);
+
+      if (headingMatch) {
+        // If a heading is found, set it as the current heading and stop
+        currentHeading = headingMatch[1].trim();
+        break;
+      }
+    }
+
+    // Check if the current heading matches the target heading
+    return currentHeading === this.#dailyNoteHeading;
   }
 
   // Returns true if line after line-number `l` is a nested item
@@ -61,7 +99,7 @@ class TodoParser {
     let todos = [];
     for (let l = 0; l < this.#lines.length; l++) {
       const line = this.#lines[l];
-      if (this.#isTodo(line)) {
+      if (this.#isTodo(line) && this.#isChildOfHeading(line)) {
         todos.push(line);
         if (this.#withChildren && this.#hasChildren(l)) {
           const cs = this.#getChildren(l);
@@ -75,7 +113,7 @@ class TodoParser {
 }
 
 // Utility-function that acts as a thin wrapper around `TodoParser`
-export const getTodos = ({ lines, withChildren = false }) => {
-  const todoParser = new TodoParser(lines, withChildren);
+export const getTodos = ({ lines, dailyNoteHeading, withChildren = false }) => {
+  const todoParser = new TodoParser(lines, withChildren, dailyNoteHeading);
   return todoParser.getTodos();
 };
