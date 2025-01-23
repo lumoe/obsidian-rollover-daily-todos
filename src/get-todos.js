@@ -5,17 +5,25 @@ class TodoParser {
   // List of strings that include the Markdown content
   #lines;
 
-  // Boolean that encodes whether nested items should be rolled over
+  // Booleans that encode configurations
   #withChildren;
+  #preserveNonBulletPoints;
 
-  constructor(lines, withChildren) {
+  constructor(lines, withChildren, preserveNonBulletPoints) {
     this.#lines = lines;
     this.#withChildren = withChildren;
+    this.#preserveNonBulletPoints = preserveNonBulletPoints;
   }
 
-  // Returns true if string s is a todo-item
-  #isTodo(s) {
+  // Returns true if string s is an unfinished todo-item
+  #isUnfinishedTodo(s) {
     const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^xX-]\\].*`, "g"); // /\s*[-*+] \[[^xX-]\].*/g;
+    return r.test(s);
+  }
+
+  // Returns true if string is is a finished todo-item
+  #isFinishedTodo(s) {
+    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[xX-]\\].*`, "g"); // /\s*[-*+] \[[xX-]\].*/g;
     return r.test(s);
   }
 
@@ -26,10 +34,7 @@ class TodoParser {
     }
     const indCurr = this.#getIndentation(l);
     const indNext = this.#getIndentation(l + 1);
-    if (indNext > indCurr) {
-      return true;
-    }
-    return false;
+    return (indNext > indCurr);
   }
 
   // Returns a list of strings that are the nested items after line `parentLinum`
@@ -56,18 +61,21 @@ class TodoParser {
     return this.#lines[l].search(/\S/);
   }
 
-  // Returns a list of strings that represents all the todos along with there potential children
+  // Returns a list of strings that represents all the todos along with their potential children
+  // and (optionally) non-bullet point lines based on the preserveNonBulletPoints setting
   getTodos() {
     let todos = [];
     for (let l = 0; l < this.#lines.length; l++) {
       const line = this.#lines[l];
-      if (this.#isTodo(line)) {
+      if (this.#isUnfinishedTodo(line)) {
         todos.push(line);
         if (this.#withChildren && this.#hasChildren(l)) {
           const cs = this.#getChildren(l);
           todos = [...todos, ...cs];
           l += cs.length;
         }
+      } else if (this.#preserveNonBulletPoints && this.#getIndentation(l) === 0 && !this.#isFinishedTodo(line)) {
+        todos.push(line);
       }
     }
     return todos;
@@ -75,7 +83,7 @@ class TodoParser {
 }
 
 // Utility-function that acts as a thin wrapper around `TodoParser`
-export const getTodos = ({ lines, withChildren = false }) => {
-  const todoParser = new TodoParser(lines, withChildren);
+export const getTodos = ({ lines, withChildren = false, preserveNonBulletPoints = false }) => {
+  const todoParser = new TodoParser(lines, withChildren, preserveNonBulletPoints);
   return todoParser.getTodos();
 };

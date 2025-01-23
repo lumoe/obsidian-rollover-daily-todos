@@ -115,5 +115,19 @@ export default class RolloverSettingTab extends PluginSettingTab {
             this.plugin.loadData().then((value) => console.log(value));
           })
       );
+
+    new Setting(this.containerEl)
+      .setName("Preserve non-bullet point lines in rollover")
+      .setDesc(
+        `When enabled, non-bullet point lines such as headings are preserved in the rollover process. By default, this is off.`
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.preserveNonBulletPoints || false)
+          .onChange((value) => {
+            this.plugin.settings.preserveNonBulletPoints = value;
+            this.plugin.saveSettings();
+          })
+      );
   }
 }

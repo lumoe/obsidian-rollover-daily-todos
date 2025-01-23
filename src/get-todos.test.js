@@ -301,3 +301,113 @@ test("get todos doesn't add intermediate other elements", () => {
   ];
   expect(todos).toStrictEqual(result);
 });
+
+
+test("preserve non-bullet point lines when preserveNonBulletPoints is enabled", () => {
+  // GIVEN
+  const lines = [
+    "# Heading1",
+    "- [x] Completed Task",
+    "- [ ] Incomplete Task",
+    "## Heading2",
+    "- [ ] Another Incomplete Task",
+    "- Some random line",
+    "- [x] Another Completed Task",
+    "### Heading3",
+    "- [ ] Yet Another Incomplete Task",
+  ];
+
+  // WHEN
+  const result = getTodos({
+    lines: lines,
+    withChildren: false,
+    preserveNonBulletPoints: true, // New parameter enabled
+  });
+
+  // THEN
+  const expected = [
+    "# Heading1",
+    "- [ ] Incomplete Task",
+    "## Heading2",
+    "- [ ] Another Incomplete Task",
+    "- Some random line",
+    "### Heading3",
+    "- [ ] Yet Another Incomplete Task",
+  ];
+  expect(result).toStrictEqual(expected);
+});
+
+test("preserve non-bullet point lines when preserveNonBulletPoints is enabled with children", () => {
+  // GIVEN
+  const lines = [
+    "# Heading1",
+    "- [x] Completed Task",
+    "- [ ] Incomplete Task",
+    "## Heading2",
+    "- [ ] Another Incomplete Task",
+    "- Some random line",
+    "- [x] Another Completed Task",
+    "### Heading3",
+    "- [ ] Yet Another Incomplete Task",
+  ];
+
+  // WHEN
+  const result = getTodos({
+    lines: lines,
+    withChildren: true,
+    preserveNonBulletPoints: true, // New parameter enabled
+  });
+
+  // THEN
+  const expected = [
+    "# Heading1",
+    "- [ ] Incomplete Task",
+    "## Heading2",
+    "- [ ] Another Incomplete Task",
+    "- Some random line",
+    "### Heading3",
+    "- [ ] Yet Another Incomplete Task",
+  ];
+  expect(result).toStrictEqual(expected);
+});
+
+test("preserve non-bullet point lines when preserveNonBulletPoints is enabled with children and alternate symbols", () => {
+  // GIVEN
+  const lines = [
+    "Random text not to delete",
+    "+ [x] Completed Task",
+    "  + [ ] Incomplete Task",
+    "## Heading2",
+    "+ [ ] Another Incomplete Task",
+    "+ Some random line",
+    "  + [x] Another Completed Task",
+    "  + [ ] Yet Another Incomplete Task",
+    "### Heading3",
+    "+ [ ] Yet Another Incomplete Task",
+    "  + [x] Another Completed Task",
+    "  + [ ] Yet Another Incomplete Task",
+  ];
+
+  // WHEN
+  const result = getTodos({
+    lines: lines,
+    withChildren: true,
+    preserveNonBulletPoints: true, // New parameter enabled
+  });
+
+  // THEN
+  const expected = [
+    "Random text not to delete",
+    "  + [ ] Incomplete Task",
+    "## Heading2",
+    "+ [ ] Another Incomplete Task",
+    "+ Some random line",
+    "  + [ ] Yet Another Incomplete Task",
+    "### Heading3",
+    "+ [ ] Yet Another Incomplete Task",
+    "  + [x] Another Completed Task",
+    "  + [ ] Yet Another Incomplete Task",
+  ];
+
+  expect(result).toStrictEqual(expected);
+});
