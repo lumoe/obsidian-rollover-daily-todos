@@ -33,7 +33,7 @@ test("single done todo element should not return itself", () => {
   const result = getTodos({ lines });
 
   // THEN
-  const todos = [""];
+  const todos = [];
   expect(result).toStrictEqual(todos);
 });
 
@@ -45,7 +45,7 @@ test("single canceled todo element should not return itself", () => {
   const result = getTodos({ lines });
 
   // THEN
-  const todos = [""];
+  const todos = [];
   expect(result).toStrictEqual(todos);
 });
 
@@ -199,6 +199,7 @@ test("get todos with correct alternate checkbox children", function () {
   const result = [
     "- [ ] TODO",
     "    - [ ] Next",
+    "    - [x] Completed task",
     "    - some stuff",
     "- [ ] Another one",
     "    - [ ] Another child",
@@ -207,6 +208,7 @@ test("get todos with correct alternate checkbox children", function () {
   ];
   expect(todos).toStrictEqual(result);
 });
+
 test("get todos with children doesn't fail if child at end of list", () => {
   // GIVEN
   const lines = [
