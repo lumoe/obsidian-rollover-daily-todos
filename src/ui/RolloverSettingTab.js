@@ -115,5 +115,19 @@ export default class RolloverSettingTab extends PluginSettingTab {
             this.plugin.loadData().then((value) => console.log(value));
           })
       );
+
+    new Setting(this.containerEl)
+      .setName("Done status markers")
+      .setDesc(
+        `Characters that represent done status in checkboxes. Default is "xX-". Add any characters that should be considered as marking a task complete.`
+      )
+      .addText((text) =>
+        text
+          .setValue(this.plugin.settings.doneStatusMarkers || "xX-")
+          .onChange((value) => {
+            this.plugin.settings.doneStatusMarkers = value;
+            this.plugin.saveSettings();
+          })
+      );
   }
 }

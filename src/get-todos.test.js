@@ -301,3 +301,27 @@ test("get todos doesn't add intermediate other elements", () => {
   ];
   expect(todos).toStrictEqual(result);
 });
+
+test("get todos supports custom done status markers", () => {
+  // GIVEN
+  const lines = [
+    "- [ ] Incomplete task",
+    "- [x] Completed task (x)",
+    "- [X] Completed task (X)",
+    "- [-] Completed task (-)",
+    "- [C] Task with custom status (C)",
+    "- [?] Task with custom status (?)",
+  ];
+
+  // WHEN - only consider 'C' and '?' as done
+  const todos = getTodos({ lines, doneStatusMarkers: "C?" });
+
+  // THEN - x, X, and - should be considered incomplete now
+  const result = [
+    "- [ ] Incomplete task",
+    "- [x] Completed task (x)",
+    "- [X] Completed task (X)",
+    "- [-] Completed task (-)",
+  ];
+  expect(todos).toStrictEqual(result);
+});

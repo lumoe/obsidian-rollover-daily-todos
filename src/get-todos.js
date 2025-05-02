@@ -2,23 +2,27 @@ class TodoParser {
   // Support all unordered list bullet symbols as per spec (https://daringfireball.net/projects/markdown/syntax#list)
   bulletSymbols = ["-", "*", "+"];
 
+  // Default completed status markers
+  doneStatusMarkers = ["x", "X", "-"];
+
   // List of strings that include the Markdown content
   #lines;
 
   // Boolean that encodes whether nested items should be rolled over
   #withChildren;
 
-  constructor(lines, withChildren) {
+  constructor(lines, withChildren, doneStatusMarkers) {
     this.#lines = lines;
     this.#withChildren = withChildren;
+    if (doneStatusMarkers) {
+      this.doneStatusMarkers = doneStatusMarkers.split('');
+    }
   }
 
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    // All markers that indicate a completed task
-    const allDoneMarkers = "xX-" + ">D?+R!iBPCQNbIpLEArcT@tO~WfF&Hs";
-    // Escape special characters for regex
-    const escapedMarkers = allDoneMarkers.replace(/[\-\+\?]/g, '\\$&');
+    // Convert doneStatusMarkers array to string and escape special characters for regex
+    const escapedMarkers = this.doneStatusMarkers.map(m => m.replace(/[\-\+\?\[\]\(\)\{\}\^\.\*\$\|\\]/g, '\\$&')).join('');
     const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^${escapedMarkers}]\\].*`, "g");
     return r.test(s);
   }
@@ -79,7 +83,7 @@ class TodoParser {
 }
 
 // Utility-function that acts as a thin wrapper around `TodoParser`
-export const getTodos = ({ lines, withChildren = false }) => {
-  const todoParser = new TodoParser(lines, withChildren);
+export const getTodos = ({ lines, withChildren = false, doneStatusMarkers = null }) => {
+  const todoParser = new TodoParser(lines, withChildren, doneStatusMarkers);
   return todoParser.getTodos();
 };
