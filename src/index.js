@@ -360,7 +360,7 @@ export default class RolloverTodosPlugin extends Plugin {
     );
 
     this.addCommand({
-      id: "obsidian-rollover-daily-todos-rollover",
+      id: "rollover-daily-todos-rollover",
       name: "Rollover Todos Now",
       callback: () => {
         this.rollover();
@@ -368,7 +368,7 @@ export default class RolloverTodosPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: "obsidian-rollover-daily-todos-undo",
+      id: "rollover-daily-todos-undo",
       name: "Undo last rollover",
       checkCallback: (checking) => {
         // no history, don't allow undo
