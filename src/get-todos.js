@@ -15,7 +15,11 @@ class TodoParser {
 
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^xX-]\\].*`, "g"); // /\s*[-*+] \[[^xX-]\].*/g;
+    // All markers that indicate a completed task
+    const allDoneMarkers = "xX-" + ">D?+R!iBPCQNbIpLEArcT@tO~WfF&Hs";
+    // Escape special characters for regex
+    const escapedMarkers = allDoneMarkers.replace(/[\-\+\?]/g, '\\$&');
+    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^${escapedMarkers}]\\].*`, "g");
     return r.test(s);
   }
 
