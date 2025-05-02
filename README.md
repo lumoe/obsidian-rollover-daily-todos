@@ -1,6 +1,6 @@
 # Rollover Daily Todos
 
-[![Build](https://github.com/erikaRS/rollover-daily-todos/actions/workflows/ci.yml/badge.svg)](https://github.com/erikaRS/rollover-daily-todos/actions/workflows/ci.yml)
+[![Build](https://github.com/ErikaRS/rollover-daily-todos/actions/workflows/ci.yml/badge.svg)](https://github.com/ErikaRS/rollover-daily-todos/actions/workflows/ci.yml)
 
 This Obsidian plugin will rollover any incomplete todo items from the previous daily note (could be yesterday, or a week ago) to today. This is triggered automatically when a new daily note is created via the internal `Daily notes` plugin, or the `Periodic Notes` plugin., It can also be run as a command from the Command Palette.
 
@@ -91,3 +91,38 @@ And the previous day might look like
 ## Installation
 
 This fork can currently only be installed manually. The [original](https://github.com/lumoe/obsidian-rollover-daily-todos) plugin can be installed within the `Third-party Plugins` tab within Obsidian. These plugins have different names so it is possible (but not recommended) to install both at the same time.
+
+### Manual Installation Steps
+
+1. Clone this repository:
+
+   ```bash
+   git clone https://github.com/ErikaRS/rollover-daily-todos.git
+   ```
+
+2. Navigate to the project folder and install dependencies:
+
+   ```bash
+   cd rollover-daily-todos
+   npm install
+   ```
+
+3. Build the plugin:
+
+   ```bash
+   npm run build
+   ```
+
+4. Create a folder called `rollover-daily-todos` in your Obsidian vault's `.obsidian/plugins/` directory.
+
+5. Copy `main.js` and `manifest.json` from the project's root directory to the newly created folder in your vault:
+
+   ```
+   YOUR_VAULT/.obsidian/plugins/rollover-daily-todos/
+   ├── main.js
+   └── manifest.json
+   ```
+
+6. Enable the plugin in Obsidian's Community Plugins settings.
+
+For more information on developing Obsidian plugins, see the [official documentation](https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin).
