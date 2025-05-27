@@ -49,13 +49,23 @@ Toggling this setting on will remove incomplete todos from the previous daily no
 
 ### 4. Remove empty todos in rollover
 
-By default, this plugin will roll over anything that has a checkbox, whether it has content or not. Toggling this setting on will ignore empty todos. If you have **#2** from above toggled on, it will also delete empty todos.
+By default, this plugin will roll over anything that has a checkbox, whether it has content or not. Toggling this setting on will ignore empty todos. If you have **#3** from above toggled on, it will also delete empty todos.
+
+### 5. Roll over children of todos
+
+By default, only the actual todos are rolled over. If you add nested Markdown elements beneath your todos, these are not rolled over but stay in place. Toggling this setting on allows for also migrating the nested elements, including ones that are completed.
+
+### 6. Done status markers
+
+By default, the plugin considers checkboxes containing 'x', 'X', or '-' as completed tasks that won't be rolled over. You can customize this by adding any characters that should be considered "done" markers. For example, adding '?+>' would also treat checkboxes like '[?]', '[+]', and '[>]' as completed tasks. This is useful for users of custom status markers like the [Obsidian Tasks](https://publish.obsidian.md/tasks/Introduction) plugin.
+
+The plugin supports Unicode characters, including complex emoji and grapheme clusters, in checkbox content. This means you can use emojis or special Unicode characters as status markers and they will be handled correctly.
 
 ## Bugs/Issues
 
 1. Sometimes you will use this plugin, and your unfinished todos will stay in the same spot. These could be formatting issues.
 
-- Regex is used to search for unfinished todos: `/\s*[-*+] \[ \].*/g`
+- Regex is used to search for unfinished todos: `/\s*[-*+] \[[^xX-]\].*/g` (or with your custom done markers)
 - At a minimum, they need to look like: `start of line | tabs`-` `[` `]`Your text goes here`
 - If you use spaces instead of tabs at the start of the line, the behavior of the plugin can be inconsistent. Sometimes it'll roll items over, but not delete them from the previous day when you have that option toggled on.
 
@@ -82,4 +92,4 @@ And the previous day might look like
 
 ## Installation
 
-This plugin can be installed within the `Third-party Plugins` tab within Obsidian.
+This plugin can be installed within the `Third-party Plugins` tab within Obsidian
