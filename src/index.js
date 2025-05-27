@@ -46,7 +46,7 @@ export default class RolloverTodosPlugin extends Plugin {
       removeEmptyTodos: false,
       rolloverChildren: false,
       rolloverOnFileCreate: true,
-      doneStatusMarkers: "xX-"
+      doneStatusMarkers: "xX-",
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -127,7 +127,7 @@ export default class RolloverTodosPlugin extends Plugin {
     return getTodos({
       lines: dnLines,
       withChildren: this.settings.rolloverChildren,
-      doneStatusMarkers: this.settings.doneStatusMarkers
+      doneStatusMarkers: this.settings.doneStatusMarkers,
     });
   }
 
@@ -360,7 +360,7 @@ export default class RolloverTodosPlugin extends Plugin {
     );
 
     this.addCommand({
-      id: "rollover-daily-todos-rollover",
+      id: "obsidian-rollover-daily-todos-rollover",
       name: "Rollover Todos Now",
       callback: () => {
         this.rollover();
@@ -368,7 +368,7 @@ export default class RolloverTodosPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: "rollover-daily-todos-undo",
+      id: "obsidian-rollover-daily-todos-undo",
       name: "Undo last rollover",
       checkCallback: (checking) => {
         // no history, don't allow undo
