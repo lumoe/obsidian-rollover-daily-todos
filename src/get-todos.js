@@ -11,20 +11,61 @@ class TodoParser {
   // Boolean that encodes whether nested items should be rolled over
   #withChildren;
 
+  // Parse content with segmentation to allow for Unicode grapheme clusters
+  #parseIntoChars(content, contentType = "content") {
+    // Use Intl.Segmenter to properly split grapheme clusters if available,
+    // otherwise fall back to Array.from. The fallback should not trigger in
+    // Obsidian since it uses Electron which supports Intl.Segmenter.
+    if (typeof Intl !== "undefined" && Intl.Segmenter) {
+      const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+      return Array.from(segmenter.segment(content), (s) => s.segment);
+    } else {
+      // Array.from() splits surrogate pairs correctly but not complex grapheme clusters
+      // (e.g., 👨‍👩‍👧‍👦 would be split incorrectly) and fail to match.
+      console.error(
+        `Intl.Segmenter not available, falling back to Array.from() for ${contentType}`
+      );
+      return Array.from(content);
+    }
+  }
+
   constructor(lines, withChildren, doneStatusMarkers) {
     this.#lines = lines;
     this.#withChildren = withChildren;
     if (doneStatusMarkers) {
-      this.doneStatusMarkers = doneStatusMarkers.split('');
+      this.doneStatusMarkers = this.#parseIntoChars(
+        doneStatusMarkers,
+        "done status markers"
+      );
     }
   }
 
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    // Convert doneStatusMarkers array to string and escape special characters for regex
-    const escapedMarkers = this.doneStatusMarkers.map(m => m.replace(/[\-\+\?\[\]\(\)\{\}\^\.\*\$\|\\]/g, '\\$&')).join('');
-    const r = new RegExp(`\\s*[${this.bulletSymbols.join("")}] \\[[^${escapedMarkers}]\\].*`, "g");
-    return r.test(s);
+    // Extract the checkbox content
+    const match = s.match(/\s*[*+-] \[(.+?)\]/);
+    if (!match) return false;
+
+    const checkboxContent = match[1];
+
+    // Parse content with segmentation to allow for Unicode grapheme clusters
+    const contentChars = this.#parseIntoChars(
+      checkboxContent,
+      "checkbox content"
+    );
+
+    // Valid checkbox content must be exactly one grapheme cluster
+    if (contentChars.length !== 1) {
+      return false;
+    }
+
+    // Check if the checkbox content contains any characters that are in doneStatusMarkers
+    const hasDoneMarker = contentChars.some((char) =>
+      this.doneStatusMarkers.includes(char)
+    );
+
+    // Return true (is a todo) if it does NOT contain any done markers
+    return !hasDoneMarker;
   }
 
   // Returns true if line after line-number `l` is a nested item
@@ -83,7 +124,11 @@ class TodoParser {
 }
 
 // Utility-function that acts as a thin wrapper around `TodoParser`
-export const getTodos = ({ lines, withChildren = false, doneStatusMarkers = null }) => {
+export const getTodos = ({
+  lines,
+  withChildren = false,
+  doneStatusMarkers = null,
+}) => {
   const todoParser = new TodoParser(lines, withChildren, doneStatusMarkers);
   return todoParser.getTodos();
 };

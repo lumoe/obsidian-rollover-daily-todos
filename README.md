@@ -59,6 +59,8 @@ By default, only the actual todos are rolled over. If you add nested Markdown el
 
 By default, the plugin considers checkboxes containing 'x', 'X', or '-' as completed tasks that won't be rolled over. You can customize this by adding any characters that should be considered "done" markers. For example, adding '?+>' would also treat checkboxes like '[?]', '[+]', and '[>]' as completed tasks. This is useful for users of custom status markers like the [Obsidian Tasks](https://publish.obsidian.md/tasks/Introduction) plugin.
 
+The plugin supports Unicode characters, including complex emoji and grapheme clusters, in checkbox content. This means you can use emojis or special Unicode characters as status markers and they will be handled correctly.
+
 ## Bugs/Issues
 
 1. Sometimes you will use this plugin, and your unfinished todos will stay in the same spot. These could be formatting issues.
