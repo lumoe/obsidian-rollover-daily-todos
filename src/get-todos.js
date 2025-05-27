@@ -59,6 +59,17 @@ class TodoParser {
       return false;
     }
 
+    const singleChar = contentChars[0];
+
+    // Exclude grapheme modifiers that are not valid as standalone content
+    const graphemeModifiers = ['\u202E', '\u200B', '\u200C', '\u200D'];
+    const hasGraphemeModifier = contentChars.some((char) =>
+      graphemeModifiers.includes(char)
+    );
+    if (hasGraphemeModifier) {
+      return false;
+    }
+
     // Check if the checkbox content contains any characters that are in doneStatusMarkers
     const hasDoneMarker = contentChars.some((char) =>
       this.doneStatusMarkers.includes(char)

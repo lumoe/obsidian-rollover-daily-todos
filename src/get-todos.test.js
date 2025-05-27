@@ -396,11 +396,6 @@ test("get todos supports custom status marker edge cases (exclusion)", () => {
     "- [\u0007] Bell",
     "- [\u0008] Backspace",
     "- [\u001B] Escape",
-    // Special Unicode
-    "- [\u202E] RTL override",
-    "- [\u200B] Zero-width space",
-    "- [\u200C] Zero-width non-joiner",
-    "- [\u200D] Zero-width joiner",
     // Combining characters
     "- [a\u0300] Letter with accent",
     "- [e\u0301] Letter with acute",
@@ -429,7 +424,7 @@ test("get todos supports custom status marker edge cases (exclusion)", () => {
   const todos = getTodos({
     lines,
     doneStatusMarkers:
-      "✅❌✔️✓✗👍\u0000\u0007\u0008\u001B\u202E\u200B \u200C\u200Da\u0300e\u0301.*+?()[]{}\\^$|/àé",
+      "✅❌✔️✓✗👍\u0000\u0007\u0008\u001B\u202Ea\u0300e\u0301.*+?()[]{}\\^$|/àé",
   });
 
   // THEN - only the normal task should be returned
@@ -453,11 +448,6 @@ test("get todos supports custom status marker edge cases (inclusion)", () => {
     "- [\u0007] Bell",
     "- [\u0008] Backspace",
     "- [\u001B] Escape",
-    // Special Unicode
-    "- [\u202E] RTL override",
-    "- [\u200B] Zero-width space",
-    "- [\u200C] Zero-width non-joiner",
-    "- [\u200D] Zero-width joiner",
     // Combining characters
     "- [a\u0300] Letter with accent",
     "- [e\u0301] Letter with acute",
@@ -500,11 +490,6 @@ test("get todos supports custom status marker edge cases (inclusion)", () => {
     "- [\u0007] Bell",
     "- [\u0008] Backspace",
     "- [\u001B] Escape",
-    // Special Unicode
-    "- [\u202E] RTL override",
-    "- [\u200B] Zero-width space",
-    "- [\u200C] Zero-width non-joiner",
-    "- [\u200D] Zero-width joiner",
     // Combining characters
     "- [a\u0300] Letter with accent",
     "- [e\u0301] Letter with acute",
@@ -541,6 +526,11 @@ test("should not match malformed todos", () => {
     "- [✅\u200B\u0300] multiple special",
     "- [.*+?()] multiple regexp",
     "- [a\u0300\u200B] multimple combining",
+    // Grapheme modifiers, not valid on their own
+    "- [\u202E] RTL override",
+    "- [\u200B] Zero-width space",
+    "- [\u200C] Zero-width non-joiner",
+    "- [\u200D] Zero-width joiner",
   ];
   const todos = getTodos({ lines });
   expect(todos).toStrictEqual(["- [ ] valid todo"]);
