@@ -47,8 +47,24 @@ export default class RolloverTodosPlugin extends Plugin {
       rolloverChildren: false,
       rolloverOnFileCreate: true,
       doneStatusMarkers: "xX-",
+      excludedHeadings: [], // Changed from "" to []
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+
+    // Ensure excludedHeadings is an array
+    if (typeof this.settings.excludedHeadings === 'string') {
+      const stringValue = this.settings.excludedHeadings;
+      if (stringValue.length > 0) {
+        this.settings.excludedHeadings = stringValue.split(',').map(h => h.trim()).filter(h => h.length > 0);
+      } else {
+        this.settings.excludedHeadings = [];
+      }
+    } else if (!Array.isArray(this.settings.excludedHeadings)) {
+      // If it's neither string nor array (e.g. undefined, null, or other type from corrupted data)
+      this.settings.excludedHeadings = [];
+    }
+    // Normalize items just in case: ensure all are strings and trimmed (though settings tab should handle this)
+    this.settings.excludedHeadings = this.settings.excludedHeadings.map(h => String(h).trim()).filter(h => h.length > 0);
   }
 
   async saveSettings() {
@@ -121,11 +137,15 @@ export default class RolloverTodosPlugin extends Plugin {
   }
 
   async getAllUnfinishedTodos(file) {
-    const dn = await this.app.vault.read(file);
-    const dnLines = dn.split(/\r?\n|\r|\n/g);
+    const fileContent = await this.app.vault.read(file);
+    const lines = fileContent.split(/\r?\n|\r|\n/g);
 
+    // Use the new utility function
+    const includedLines = filterLinesByExcludedHeadings(lines, this.settings.excludedHeadings);
+
+    // Now, get todos only from the lines that are not in excluded sections
     return getTodos({
-      lines: dnLines,
+      lines: includedLines,
       withChildren: this.settings.rolloverChildren,
       doneStatusMarkers: this.settings.doneStatusMarkers,
     });
@@ -389,4 +409,53 @@ export default class RolloverTodosPlugin extends Plugin {
       },
     });
   }
+}
+
+// Helper to extract heading info
+function getHeadingInfo(line) {
+  const match = line.match(/^(#+)\s+(.*)/);
+  if (match) {
+    return { level: match[1].length, text: match[2].trim() };
+  }
+  return null;
+}
+
+export function filterLinesByExcludedHeadings(lines, excludedHeadingsArray) {
+  // Directly use the array, ensuring it's normalized (lowercase)
+  const excludedHeadingsList = (excludedHeadingsArray || []).map(h => h.trim().toLowerCase()).filter(h => h.length > 0);
+
+  let activeHeadingsStack = [];
+  const includedLines = [];
+
+  for (const line of lines) {
+    const headingInfo = getHeadingInfo(line);
+    let currentSectionIsExcluded = false;
+
+    if (headingInfo) {
+      while (activeHeadingsStack.length > 0 && activeHeadingsStack[activeHeadingsStack.length - 1].level >= headingInfo.level) {
+        activeHeadingsStack.pop();
+      }
+      const normalizedHeadingText = headingInfo.text.toLowerCase();
+      let headingIsDirectlyExcluded = excludedHeadingsList.includes(normalizedHeadingText);
+      let parentIsExcluded = false;
+      if (activeHeadingsStack.length > 0) {
+        parentIsExcluded = activeHeadingsStack[activeHeadingsStack.length - 1].isExcluded;
+      }
+      currentSectionIsExcluded = headingIsDirectlyExcluded || parentIsExcluded;
+      activeHeadingsStack.push({
+        level: headingInfo.level,
+        text: headingInfo.text,
+        isExcluded: currentSectionIsExcluded
+      });
+    } else {
+      if (activeHeadingsStack.length > 0) {
+        currentSectionIsExcluded = activeHeadingsStack[activeHeadingsStack.length - 1].isExcluded;
+      }
+    }
+
+    if (!currentSectionIsExcluded) {
+      includedLines.push(line);
+    }
+  }
+  return includedLines;
 }

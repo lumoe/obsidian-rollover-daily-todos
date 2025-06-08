@@ -61,6 +61,17 @@ By default, the plugin considers checkboxes containing 'x', 'X', or '-' as compl
 
 The plugin supports Unicode characters, including complex emoji and grapheme clusters, in checkbox content. This means you can use emojis or special Unicode characters as status markers and they will be handled correctly.
 
+### 7. Excluded Headings
+
+This setting allows you to specify which sections from your daily notes should be ignored by the rollover process. The plugin will automatically detect headings present in your daily note template file (as configured in the 'Daily notes' or 'Periodic Notes' plugin settings).
+
+For each heading found in your template, a toggle switch will be displayed. You can enable the toggle for any heading you wish to exclude. If a heading is toggled on for exclusion:
+- Any incomplete todos directly under that heading will not be rolled over.
+- Any incomplete todos under its sub-headings will also be ignored (hierarchical exclusion).
+- The matching of these headings in your daily notes is case-insensitive.
+
+If your daily note template is not configured or does not contain any headings, this section will indicate that no template headings are available for selection.
+
 ## Bugs/Issues
 
 1. Sometimes you will use this plugin, and your unfinished todos will stay in the same spot. These could be formatting issues.
