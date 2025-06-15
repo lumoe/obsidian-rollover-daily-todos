@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   obsidian-daily-notes-interface:
     specifier: ^0.9.2
@@ -288,8 +292,8 @@ packages:
     resolution: {integrity: sha512-KnRanxnpfpjUTqTCXslZSEdLfXExwgNxYPdiO2WGUj8+HDjFi8R3k5RVKPeSCzLjCcshCAtVO2QBbVuAV4kTnw==}
     dev: true
 
-  /@types/codemirror@0.0.108:
-    resolution: {integrity: sha512-3FGFcus0P7C2UOGCNUVENqObEb4SFk+S8Dnxq7K6aIsLVs/vDtlangl3PEO0ykaKXyK56swVF6Nho7VsA44uhw==}
+  /@types/codemirror@5.60.8:
+    resolution: {integrity: sha512-VjFgDF/eB+Aklcy15TtOTLQeMjTo07k7KAjql8OK5Dirr7a6sJY4T1uVBDuTVG9VEmn1uUsohOpYnVfgC6/jyw==}
     dependencies:
       '@types/tern': 0.23.4
 
@@ -538,7 +542,7 @@ packages:
     resolution: {integrity: sha512-PILoRtZUB5wEeGnDQAPMlkVlXwDYoxkLR8Wl4STU2zLNwhcq9kKvQexiXi7sfjGlpTnL+LeAOfEVWyeVndneKg==}
     hasBin: true
     dependencies:
-      obsidian: github.com/obsidianmd/obsidian-api/bceb489fc25ceba5973119d6e57759d64850f90d(@codemirror/state@6.2.0)(@codemirror/view@6.9.4)
+      obsidian: git@github.com+obsidianmd/obsidian-api/249eb773347588f4e9fec7c600e1904cd9240fcb(@codemirror/state@6.2.0)(@codemirror/view@6.9.4)
       tslib: 2.1.0
     transitivePeerDependencies:
       - '@codemirror/state'
@@ -573,8 +577,8 @@ packages:
     engines: {node: '>=8.6'}
     dev: true
 
-  /postcss@8.4.21:
-    resolution: {integrity: sha512-tP7u/Sn/dVxK2NnruI4H9BG+x+Wxz6oeZ1cJ8P6G/PZY0IKk4k/63TDsQf2kQq3+qoJeLm2kIBUNlZe3zgb4Zg==}
+  /postcss@8.4.31:
+    resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
     engines: {node: ^10 || ^12 || >=14}
     dependencies:
       nanoid: 3.3.6
@@ -692,7 +696,7 @@ packages:
     dependencies:
       '@types/node': 18.15.10
       esbuild: 0.17.14
-      postcss: 8.4.21
+      postcss: 8.4.31
       resolve: 1.22.1
       rollup: 3.20.2
     optionalDependencies:
@@ -752,31 +756,31 @@ packages:
     dev: true
 
   '@github.com/obsidianmd/obsidian-api/tarball/master(@codemirror/state@6.2.0)(@codemirror/view@6.9.4)':
-    resolution: {tarball: https://github.com/obsidianmd/obsidian-api/tarball/master}
+    resolution: {registry: https://registry.npmjs.org/, tarball: https://github.com/obsidianmd/obsidian-api/tarball/master}
     id: '@github.com/obsidianmd/obsidian-api/tarball/master'
     name: obsidian
-    version: 1.1.13
+    version: 1.4.11
     peerDependencies:
       '@codemirror/state': ^6.0.0
       '@codemirror/view': ^6.0.0
     dependencies:
       '@codemirror/state': 6.2.0
       '@codemirror/view': 6.9.4
-      '@types/codemirror': 0.0.108
+      '@types/codemirror': 5.60.8
       moment: 2.29.4
     dev: true
 
-  github.com/obsidianmd/obsidian-api/bceb489fc25ceba5973119d6e57759d64850f90d(@codemirror/state@6.2.0)(@codemirror/view@6.9.4):
-    resolution: {tarball: https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/bceb489fc25ceba5973119d6e57759d64850f90d}
-    id: github.com/obsidianmd/obsidian-api/bceb489fc25ceba5973119d6e57759d64850f90d
+  git@github.com+obsidianmd/obsidian-api/249eb773347588f4e9fec7c600e1904cd9240fcb(@codemirror/state@6.2.0)(@codemirror/view@6.9.4):
+    resolution: {commit: 249eb773347588f4e9fec7c600e1904cd9240fcb, repo: git@github.com:obsidianmd/obsidian-api.git, type: git}
+    id: git@github.com+obsidianmd/obsidian-api/249eb773347588f4e9fec7c600e1904cd9240fcb
     name: obsidian
-    version: 1.1.13
+    version: 1.4.11
     peerDependencies:
       '@codemirror/state': ^6.0.0
       '@codemirror/view': ^6.0.0
     dependencies:
       '@codemirror/state': 6.2.0
       '@codemirror/view': 6.9.4
-      '@types/codemirror': 0.0.108
+      '@types/codemirror': 5.60.8
       moment: 2.29.4
     dev: false
