@@ -129,5 +129,24 @@ export default class RolloverSettingTab extends PluginSettingTab {
             this.plugin.saveSettings();
           })
       );
+    new Setting(this.containerEl)
+      .setName("Add extra blank line between Heading and Todos")
+      .setDesc(`Whether to add an extra blank line between the selected Heading and the rolled over todos. This will only work in combination with a configured Template Heading.`)
+      .addToggle((toggle) => 
+        toggle
+          .setValue(
+            this.plugin.settings
+              .leadingNewLine === undefined || 
+              this.plugin.settings.leadingNewLine === null 
+              ? true 
+              : this.plugin.settings.leadingNewLine
+          )
+          .onChange((value) => {
+            console.log(value);
+            this.plugin.settings.leadingNewLine = value;
+            this.plugin.saveSettings();
+            this.plugin.loadData().then((value) => console.log(value));
+          })
+      );
   }
 }
