@@ -129,5 +129,19 @@ export default class RolloverSettingTab extends PluginSettingTab {
             this.plugin.saveSettings();
           })
       );
+
+    new Setting(this.containerEl)
+      .setName("Copy todos to clipboard for safety")
+      .setDesc(
+        `When enabled, todos are automatically copied to the system clipboard before deletion. This provides a safety backup in case file operations fail, preventing todo loss.`
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.clipboardSafety !== false) // Default to true
+          .onChange((value) => {
+            this.plugin.settings.clipboardSafety = value;
+            this.plugin.saveSettings();
+          })
+      );
   }
 }

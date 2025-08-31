@@ -47,12 +47,32 @@ export default class RolloverTodosPlugin extends Plugin {
       rolloverChildren: false,
       rolloverOnFileCreate: true,
       doneStatusMarkers: "xX-",
+      clipboardSafety: true,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
 
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  async copyTodosToClipboard(todos, date) {
+    if (!this.settings.clipboardSafety || !todos || todos.length === 0) {
+      return false;
+    }
+
+    try {
+      const formattedDate = date ? ` (${date})` : "";
+      const clipboardContent = `## Rolled Over Todos${formattedDate}\n${todos.join(
+        "\n"
+      )}`;
+
+      await navigator.clipboard.writeText(clipboardContent);
+      return true;
+    } catch (error) {
+      console.warn("Failed to copy todos to clipboard:", error);
+      return false;
+    }
   }
 
   isDailyNotesEnabled() {
@@ -281,11 +301,30 @@ export default class RolloverTodosPlugin extends Plugin {
           dailyNoteContent += todos_todayString;
         }
 
-        await this.app.vault.modify(file, dailyNoteContent);
+        try {
+          await this.app.vault.modify(file, dailyNoteContent);
+        } catch (error) {
+          // Copy todos to clipboard for recovery if insertion fails
+          const todayFormatted = window.moment().format("YYYY-MM-DD");
+          await this.copyTodosToClipboard(todos_today, todayFormatted);
+
+          new Notice(
+            `Error adding todos to ${file.basename}. Todos are safely copied to clipboard for manual paste. Error: ${error.message}`,
+            10000
+          );
+          console.error("Error modifying today file:", error);
+          return;
+        }
       }
 
       // if deleteOnComplete, get yesterday's content and modify it
       if (deleteOnComplete) {
+        // Copy todos to clipboard for safety before deletion
+        const previousDayFormatted = window
+          .moment(lastDailyNote.basename, format)
+          .format("YYYY-MM-DD");
+        await this.copyTodosToClipboard(todos_yesterday, previousDayFormatted);
+
         let lastDailyNoteContent = await this.app.vault.read(lastDailyNote);
         undoHistoryInstance.previousDay = {
           file: lastDailyNote,
@@ -300,7 +339,17 @@ export default class RolloverTodosPlugin extends Plugin {
         }
 
         const modifiedContent = lines.join("\n");
-        await this.app.vault.modify(lastDailyNote, modifiedContent);
+
+        try {
+          await this.app.vault.modify(lastDailyNote, modifiedContent);
+        } catch (error) {
+          new Notice(
+            `Error deleting todos from ${lastDailyNote.basename}. Todos are safely copied to clipboard. Error: ${error.message}`,
+            10000
+          );
+          console.error("Error modifying previous day file:", error);
+          return;
+        }
       }
 
       // Let user know rollover has been successful with X todos
