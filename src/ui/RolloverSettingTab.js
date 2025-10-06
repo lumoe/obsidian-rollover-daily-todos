@@ -142,10 +142,8 @@ export default class RolloverSettingTab extends PluginSettingTab {
               : this.plugin.settings.leadingNewLine
           )
           .onChange((value) => {
-            console.log(value);
             this.plugin.settings.leadingNewLine = value;
             this.plugin.saveSettings();
-            this.plugin.loadData().then((value) => console.log(value));
           })
       );
   }
