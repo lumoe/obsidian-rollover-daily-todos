@@ -11,6 +11,9 @@ class TodoParser {
   // Boolean that encodes whether nested items should be rolled over
   #withChildren;
 
+  // Boolean that encodes whether todos in blockquotes/callouts should be ignored
+  #ignoreBlockquotes;
+
   // Parse content with segmentation to allow for Unicode grapheme clusters
   #parseIntoChars(content, contentType = "content") {
     // Use Intl.Segmenter to properly split grapheme clusters if available,
@@ -29,9 +32,10 @@ class TodoParser {
     }
   }
 
-  constructor(lines, withChildren, doneStatusMarkers) {
+  constructor(lines, withChildren, doneStatusMarkers, ignoreBlockquotes) {
     this.#lines = lines;
     this.#withChildren = withChildren;
+    this.#ignoreBlockquotes = ignoreBlockquotes || false;
     if (doneStatusMarkers) {
       this.doneStatusMarkers = this.#parseIntoChars(
         doneStatusMarkers,
@@ -116,12 +120,20 @@ class TodoParser {
     return this.#lines[l].search(/\S/);
   }
 
+  // Returns true if string s is inside a blockquote (starts with >)
+  // This is used to ignore todos inside callouts/blockquotes
+  #isInBlockquote(s) {
+    return /^\s*>/.test(s);
+  }
+
   // Returns a list of strings that represents all the todos along with there potential children
   getTodos() {
     let todos = [];
     for (let l = 0; l < this.#lines.length; l++) {
       const line = this.#lines[l];
-      if (this.#isTodo(line)) {
+      // Skip todos that are inside blockquotes/callouts (if setting is enabled)
+      const shouldSkipBlockquote = this.#ignoreBlockquotes && this.#isInBlockquote(line);
+      if (this.#isTodo(line) && !shouldSkipBlockquote) {
         todos.push(line);
         if (this.#withChildren && this.#hasChildren(l)) {
           const cs = this.#getChildren(l);
@@ -139,7 +151,8 @@ export const getTodos = ({
   lines,
   withChildren = false,
   doneStatusMarkers = null,
+  ignoreBlockquotes = false,
 }) => {
-  const todoParser = new TodoParser(lines, withChildren, doneStatusMarkers);
+  const todoParser = new TodoParser(lines, withChildren, doneStatusMarkers, ignoreBlockquotes);
   return todoParser.getTodos();
 };

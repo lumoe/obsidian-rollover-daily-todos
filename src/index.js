@@ -48,6 +48,7 @@ export default class RolloverTodosPlugin extends Plugin {
       rolloverOnFileCreate: true,
       doneStatusMarkers: "xX-",
       leadingNewLine: true,
+      ignoreBlockquotes: false,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -129,6 +130,7 @@ export default class RolloverTodosPlugin extends Plugin {
       lines: dnLines,
       withChildren: this.settings.rolloverChildren,
       doneStatusMarkers: this.settings.doneStatusMarkers,
+      ignoreBlockquotes: this.settings.ignoreBlockquotes,
     });
   }
 
