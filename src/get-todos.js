@@ -116,6 +116,11 @@ class TodoParser {
     return this.#lines[l].search(/\S/);
   }
 
+  // Returns true if a single line is an unfinished todo (public wrapper around #isTodo)
+  isTodoLine(line) {
+    return this.#isTodo(line);
+  }
+
   // Returns a list of strings that represents all the todos along with there potential children
   getTodos() {
     let todos = [];
@@ -154,6 +159,7 @@ export const getTodosBySection = ({
 }) => {
   const sectionTodos = new Map();
   let currentHeading = "__no_heading__";
+  const todoChecker = new TodoParser([], false, doneStatusMarkers);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -164,9 +170,7 @@ export const getTodosBySection = ({
     }
 
     // Check if this line is an unfinished todo
-    const todoParser = new TodoParser([line], false, doneStatusMarkers);
-    const parsed = todoParser.getTodos();
-    if (parsed.length > 0) {
+    if (todoChecker.isTodoLine(line)) {
       if (!sectionTodos.has(currentHeading)) {
         sectionTodos.set(currentHeading, []);
       }

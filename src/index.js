@@ -124,7 +124,7 @@ export default class RolloverTodosPlugin extends Plugin {
 
   async getAllUnfinishedTodos(file) {
     const dn = await this.app.vault.read(file);
-    const dnLines = dn.split(/\r?\n|\r|\n/g);
+    const dnLines = dn.split(/\r?\n|\r/g);
 
     return getTodos({
       lines: dnLines,
@@ -241,7 +241,7 @@ export default class RolloverTodosPlugin extends Plugin {
       if (rolloverToMatchingSections) {
         // --- Section-aware rollover ---
         const lastDailyNoteContent = await this.app.vault.read(lastDailyNote);
-        const lastDailyNoteLines = lastDailyNoteContent.split(/\r?\n|\r|\n/g);
+        const lastDailyNoteLines = lastDailyNoteContent.split(/\r?\n|\r/g);
 
         const todosBySection = getTodosBySection({
           lines: lastDailyNoteLines,
@@ -289,7 +289,7 @@ export default class RolloverTodosPlugin extends Plugin {
             }
 
             // Find the matching heading in today's note by text content
-            const lines = dailyNoteContent.split("\n");
+            const lines = dailyNoteContent.split(/\r?\n|\r/g);
             let insertIndex = -1;
 
             for (let i = 0; i < lines.length; i++) {
@@ -305,6 +305,11 @@ export default class RolloverTodosPlugin extends Plugin {
                     break;
                   }
                   j++;
+                }
+                // Backtrack past trailing blank lines so todos appear
+                // right after the heading's content, not after template gaps
+                while (j > i + 1 && lines[j - 1].trim() === "") {
+                  j--;
                 }
                 insertIndex = j;
                 break;
