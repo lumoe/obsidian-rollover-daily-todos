@@ -280,6 +280,11 @@ export default class RolloverTodosPlugin extends Plugin {
             oldContent: `${dailyNoteContent}`,
           };
 
+          // Build a set of trimmed lines already in today's note to avoid duplicates
+          const existingLines = new Set(
+            dailyNoteContent.split(/\r?\n|\r/g).map((l) => l.trim())
+          );
+
           let unmatchedTodos = [];
 
           for (const [sectionKey, todos] of todosBySection) {
@@ -317,16 +322,32 @@ export default class RolloverTodosPlugin extends Plugin {
             }
 
             if (insertIndex >= 0) {
-              lines.splice(insertIndex, 0, ...todos);
-              dailyNoteContent = lines.join("\n");
+              const newTodos = todos.filter(
+                (t) => !existingLines.has(t.trim())
+              );
+              if (newTodos.length > 0) {
+                lines.splice(insertIndex, 0, ...newTodos);
+                dailyNoteContent = lines.join("\n");
+              }
             } else {
-              unmatchedTodos.push(...todos);
+              unmatchedTodos.push(
+                ...todos.filter((t) => !existingLines.has(t.trim()))
+              );
             }
           }
 
           // Append any unmatched todos to the end of the file
           if (unmatchedTodos.length > 0) {
-            dailyNoteContent += `\n${unmatchedTodos.join("\n")}`;
+            // Re-check against current content since earlier insertions may have added lines
+            const updatedLines = new Set(
+              dailyNoteContent.split(/\r?\n|\r/g).map((l) => l.trim())
+            );
+            const dedupedUnmatched = unmatchedTodos.filter(
+              (t) => !updatedLines.has(t.trim())
+            );
+            if (dedupedUnmatched.length > 0) {
+              dailyNoteContent += `\n${dedupedUnmatched.join("\n")}`;
+            }
           }
 
           await this.app.vault.modify(file, dailyNoteContent);
@@ -356,28 +377,40 @@ export default class RolloverTodosPlugin extends Plugin {
             file: file,
             oldContent: `${dailyNoteContent}`,
           };
-          const todos_todayString = `\n${todos_today.join("\n")}`;
 
-          if (templateHeadingSelected) {
-            const contentAddedToHeading = dailyNoteContent.replace(
-              templateHeading,
-              `${templateHeading}${leadingNewLine ? "\n" : ""}${todos_todayString}`
-            );
-            if (contentAddedToHeading == dailyNoteContent) {
-              templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading}' in today's daily note. Rolling todos to end of file.`;
-            } else {
-              dailyNoteContent = contentAddedToHeading;
+          // Filter out todos that already exist in today's note (e.g. from template)
+          const existingLines = new Set(
+            dailyNoteContent.split(/\r?\n|\r/g).map((l) => l.trim())
+          );
+          todos_today = todos_today.filter(
+            (t) => !existingLines.has(t.trim())
+          );
+          todosAdded = todos_today.length;
+
+          if (todos_today.length > 0) {
+            const todos_todayString = `\n${todos_today.join("\n")}`;
+
+            if (templateHeadingSelected) {
+              const contentAddedToHeading = dailyNoteContent.replace(
+                templateHeading,
+                `${templateHeading}${leadingNewLine ? "\n" : ""}${todos_todayString}`
+              );
+              if (contentAddedToHeading == dailyNoteContent) {
+                templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading}' in today's daily note. Rolling todos to end of file.`;
+              } else {
+                dailyNoteContent = contentAddedToHeading;
+              }
             }
-          }
 
-          if (
-            !templateHeadingSelected ||
-            templateHeadingNotFoundMessage.length > 0
-          ) {
-            dailyNoteContent += todos_todayString;
-          }
+            if (
+              !templateHeadingSelected ||
+              templateHeadingNotFoundMessage.length > 0
+            ) {
+              dailyNoteContent += todos_todayString;
+            }
 
-          await this.app.vault.modify(file, dailyNoteContent);
+            await this.app.vault.modify(file, dailyNoteContent);
+          }
         }
       }
 
