@@ -43,7 +43,7 @@ class TodoParser {
   // Returns true if string s is a todo-item
   #isTodo(s) {
     // Extract the checkbox content
-    const match = s.match(/\s*[*+-] \[(.+?)\]/);
+    const match = s.match(/^\s*[*+-] \[(.+?)\]/);
     if (!match) return false;
 
     const checkboxContent = match[1];
