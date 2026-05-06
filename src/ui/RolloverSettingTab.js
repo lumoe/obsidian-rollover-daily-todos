@@ -117,6 +117,20 @@ export default class RolloverSettingTab extends PluginSettingTab {
       );
 
     new Setting(this.containerEl)
+      .setName("Roll over to matching sections")
+      .setDesc(
+        `When enabled, todos are rolled over to the matching section in today's note (matched by heading text). When disabled, todos roll to the selected template heading or end of file.`
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.rolloverToMatchingSections || false)
+          .onChange((value) => {
+            this.plugin.settings.rolloverToMatchingSections = value;
+            this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(this.containerEl)
       .setName("Done status markers")
       .setDesc(
         `Characters that represent done status in checkboxes. Default is "xX-". Add any characters that should be considered as marking a task complete.`

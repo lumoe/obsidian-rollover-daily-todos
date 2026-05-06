@@ -116,6 +116,11 @@ class TodoParser {
     return this.#lines[l].search(/\S/);
   }
 
+  // Returns true if a single line is an unfinished todo (public wrapper around #isTodo)
+  isTodoLine(line) {
+    return this.#isTodo(line);
+  }
+
   // Returns a list of strings that represents all the todos along with there potential children
   getTodos() {
     let todos = [];
@@ -142,4 +147,51 @@ export const getTodos = ({
 }) => {
   const todoParser = new TodoParser(lines, withChildren, doneStatusMarkers);
   return todoParser.getTodos();
+};
+
+// Returns unfinished todos grouped by their parent heading.
+// Returns a Map of heading text (lowercase, without # prefix) -> array of todo lines.
+// Todos before any heading use key "__no_heading__".
+export const getTodosBySection = ({
+  lines,
+  withChildren = false,
+  doneStatusMarkers = null,
+}) => {
+  const sectionTodos = new Map();
+  let currentHeading = "__no_heading__";
+  const todoChecker = new TodoParser([], false, doneStatusMarkers);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const headingMatch = line.match(/^#{1,6}\s+(.*)$/);
+    if (headingMatch) {
+      currentHeading = headingMatch[1].trim().toLowerCase();
+      continue;
+    }
+
+    // Check if this line is an unfinished todo
+    if (todoChecker.isTodoLine(line)) {
+      if (!sectionTodos.has(currentHeading)) {
+        sectionTodos.set(currentHeading, []);
+      }
+      sectionTodos.get(currentHeading).push(line);
+
+      // Collect children if enabled
+      if (withChildren) {
+        const parentIndent = line.search(/\S/);
+        let j = i + 1;
+        while (j < lines.length) {
+          const childIndent = lines[j].search(/\S/);
+          if (childIndent > parentIndent && childIndent >= 0) {
+            sectionTodos.get(currentHeading).push(lines[j]);
+            j++;
+          } else {
+            break;
+          }
+        }
+        i = j - 1;
+      }
+    }
+  }
+  return sectionTodos;
 };

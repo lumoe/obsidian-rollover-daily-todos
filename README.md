@@ -61,6 +61,16 @@ By default, the plugin considers checkboxes containing 'x', 'X', or '-' as compl
 
 The plugin supports Unicode characters, including complex emoji and grapheme clusters, in checkbox content. This means you can use emojis or special Unicode characters as status markers and they will be handled correctly.
 
+### 7. Roll over to matching sections
+
+By default, all incomplete todos are collected into a flat list and placed under your chosen template heading (or at the end of the file). Enabling this setting preserves the section structure of your daily note — todos are rolled back into the section they came from.
+
+Headings are matched by text content (case-insensitive), ignoring the heading level. So `# House` in yesterday's note will match `## House` in today's template. A section boundary is defined by the next heading or a `---` separator.
+
+Any todos from sections that don't have a matching heading in today's note will fall back to the end of the file. Duplicate todos that already exist in today's note are skipped.
+
+When this setting is enabled, the "Template heading" setting is bypassed — each section handles its own placement.
+
 ## Bugs/Issues
 
 1. Sometimes you will use this plugin, and your unfinished todos will stay in the same spot. These could be formatting issues.

@@ -6,7 +6,7 @@ import {
 } from "obsidian-daily-notes-interface";
 import UndoModal from "./ui/UndoModal";
 import RolloverSettingTab from "./ui/RolloverSettingTab";
-import { getTodos } from "./get-todos";
+import { getTodos, getTodosBySection } from "./get-todos";
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
@@ -46,6 +46,7 @@ export default class RolloverTodosPlugin extends Plugin {
       removeEmptyTodos: false,
       rolloverChildren: false,
       rolloverOnFileCreate: true,
+      rolloverToMatchingSections: false,
       doneStatusMarkers: "xX-",
       leadingNewLine: true,
     };
@@ -123,7 +124,7 @@ export default class RolloverTodosPlugin extends Plugin {
 
   async getAllUnfinishedTodos(file) {
     const dn = await this.app.vault.read(file);
-    const dnLines = dn.split(/\r?\n|\r|\n/g);
+    const dnLines = dn.split(/\r?\n|\r/g);
 
     return getTodos({
       lines: dnLines,
@@ -198,15 +199,17 @@ export default class RolloverTodosPlugin extends Plugin {
         10000
       );
     } else {
-      const { templateHeading, deleteOnComplete, removeEmptyTodos, leadingNewLine } =
-        this.settings;
+      const {
+        templateHeading,
+        deleteOnComplete,
+        removeEmptyTodos,
+        rolloverToMatchingSections,
+        leadingNewLine,
+      } = this.settings;
 
       // check if there is a daily note from yesterday
       const lastDailyNote = this.getLastDailyNote();
       if (!lastDailyNote) return;
-
-      // TODO: Rollover to subheadings (optional)
-      //this.sortHeadersIntoHierarchy(lastDailyNote)
 
       // get unfinished todos from yesterday, if exist
       let todos_yesterday = await this.getAllUnfinishedTodos(lastDailyNote);
@@ -231,58 +234,184 @@ export default class RolloverTodosPlugin extends Plugin {
         },
       };
 
-      // Potentially filter todos from yesterday for today
       let todosAdded = 0;
       let emptiesToNotAddToTomorrow = 0;
-      let todos_today = !removeEmptyTodos ? todos_yesterday : [];
-      if (removeEmptyTodos) {
-        todos_yesterday.forEach((line, i) => {
-          const trimmedLine = (line || "").trim();
-          if (trimmedLine != "- [ ]" && trimmedLine != "- [  ]") {
-            todos_today.push(line);
-            todosAdded++;
-          } else {
-            emptiesToNotAddToTomorrow++;
-          }
-        });
-      } else {
-        todosAdded = todos_yesterday.length;
-      }
-
-      // get today's content and modify it
       let templateHeadingNotFoundMessage = "";
-      const templateHeadingSelected = templateHeading !== "none";
 
-      if (todos_today.length > 0) {
-        let dailyNoteContent = await this.app.vault.read(file);
-        undoHistoryInstance.today = {
-          file: file,
-          oldContent: `${dailyNoteContent}`,
-        };
-        const todos_todayString = `\n${todos_today.join("\n")}`;
+      if (rolloverToMatchingSections) {
+        // --- Section-aware rollover ---
+        const lastDailyNoteContent = await this.app.vault.read(lastDailyNote);
+        const lastDailyNoteLines = lastDailyNoteContent.split(/\r?\n|\r/g);
 
-        // If template heading is selected, try to rollover to template heading
-        if (templateHeadingSelected) {
-          const contentAddedToHeading = dailyNoteContent.replace(
-            templateHeading,
-            `${templateHeading}${leadingNewLine ? '\n' : ''}${todos_todayString}`
-          );
-          if (contentAddedToHeading == dailyNoteContent) {
-            templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading}' in today's daily not. Rolling todos to end of file.`;
-          } else {
-            dailyNoteContent = contentAddedToHeading;
+        const todosBySection = getTodosBySection({
+          lines: lastDailyNoteLines,
+          withChildren: this.settings.rolloverChildren,
+          doneStatusMarkers: this.settings.doneStatusMarkers,
+        });
+
+        // Filter empty todos if setting is enabled
+        if (removeEmptyTodos) {
+          for (const [heading, todos] of todosBySection) {
+            const filtered = todos.filter((line) => {
+              const trimmedLine = (line || "").trim();
+              if (trimmedLine === "- [ ]" || trimmedLine === "- [  ]") {
+                emptiesToNotAddToTomorrow++;
+                return false;
+              }
+              return true;
+            });
+            if (filtered.length > 0) {
+              todosBySection.set(heading, filtered);
+            } else {
+              todosBySection.delete(heading);
+            }
           }
         }
 
-        // Rollover to bottom of file if no heading found in file, or no heading selected
-        if (
-          !templateHeadingSelected ||
-          templateHeadingNotFoundMessage.length > 0
-        ) {
-          dailyNoteContent += todos_todayString;
+        // Count todos that will actually be added
+        todosBySection.forEach((todos) => {
+          todosAdded += todos.length;
+        });
+
+        if (todosAdded > 0) {
+          let dailyNoteContent = await this.app.vault.read(file);
+          undoHistoryInstance.today = {
+            file: file,
+            oldContent: `${dailyNoteContent}`,
+          };
+
+          // Build a set of trimmed lines already in today's note to avoid duplicates
+          const existingLines = new Set(
+            dailyNoteContent.split(/\r?\n|\r/g).map((l) => l.trim())
+          );
+
+          let unmatchedTodos = [];
+
+          for (const [sectionKey, todos] of todosBySection) {
+            if (sectionKey === "__no_heading__") {
+              unmatchedTodos.push(...todos);
+              continue;
+            }
+
+            // Find the matching heading in today's note by text content
+            const lines = dailyNoteContent.split(/\r?\n|\r/g);
+            let insertIndex = -1;
+
+            for (let i = 0; i < lines.length; i++) {
+              const lineHeadingMatch = lines[i].match(/^#{1,6}\s+(.*)$/);
+              if (
+                lineHeadingMatch &&
+                lineHeadingMatch[1].trim().toLowerCase() === sectionKey
+              ) {
+                // Found the heading — find the end of its section
+                let j = i + 1;
+                while (j < lines.length) {
+                  if (lines[j].match(/^#{1,6}\s/) || lines[j].trim() === "---") {
+                    break;
+                  }
+                  j++;
+                }
+                // Backtrack past trailing blank lines so todos appear
+                // right after the heading's content, not after template gaps
+                while (j > i + 1 && lines[j - 1].trim() === "") {
+                  j--;
+                }
+                insertIndex = j;
+                break;
+              }
+            }
+
+            if (insertIndex >= 0) {
+              const newTodos = todos.filter(
+                (t) => !existingLines.has(t.trim())
+              );
+              if (newTodos.length > 0) {
+                lines.splice(insertIndex, 0, ...newTodos);
+                dailyNoteContent = lines.join("\n");
+              }
+            } else {
+              unmatchedTodos.push(
+                ...todos.filter((t) => !existingLines.has(t.trim()))
+              );
+            }
+          }
+
+          // Append any unmatched todos to the end of the file
+          if (unmatchedTodos.length > 0) {
+            // Re-check against current content since earlier insertions may have added lines
+            const updatedLines = new Set(
+              dailyNoteContent.split(/\r?\n|\r/g).map((l) => l.trim())
+            );
+            const dedupedUnmatched = unmatchedTodos.filter(
+              (t) => !updatedLines.has(t.trim())
+            );
+            if (dedupedUnmatched.length > 0) {
+              dailyNoteContent += `\n${dedupedUnmatched.join("\n")}`;
+            }
+          }
+
+          await this.app.vault.modify(file, dailyNoteContent);
+        }
+      } else {
+        // --- Original single-heading rollover ---
+        let todos_today = !removeEmptyTodos ? todos_yesterday : [];
+        if (removeEmptyTodos) {
+          todos_yesterday.forEach((line, i) => {
+            const trimmedLine = (line || "").trim();
+            if (trimmedLine != "- [ ]" && trimmedLine != "- [  ]") {
+              todos_today.push(line);
+              todosAdded++;
+            } else {
+              emptiesToNotAddToTomorrow++;
+            }
+          });
+        } else {
+          todosAdded = todos_yesterday.length;
         }
 
-        await this.app.vault.modify(file, dailyNoteContent);
+        const templateHeadingSelected = templateHeading !== "none";
+
+        if (todos_today.length > 0) {
+          let dailyNoteContent = await this.app.vault.read(file);
+          undoHistoryInstance.today = {
+            file: file,
+            oldContent: `${dailyNoteContent}`,
+          };
+
+          // Filter out todos that already exist in today's note (e.g. from template)
+          const existingLines = new Set(
+            dailyNoteContent.split(/\r?\n|\r/g).map((l) => l.trim())
+          );
+          todos_today = todos_today.filter(
+            (t) => !existingLines.has(t.trim())
+          );
+          todosAdded = todos_today.length;
+
+          if (todos_today.length > 0) {
+            const todos_todayString = `\n${todos_today.join("\n")}`;
+
+            if (templateHeadingSelected) {
+              const contentAddedToHeading = dailyNoteContent.replace(
+                templateHeading,
+                `${templateHeading}${leadingNewLine ? "\n" : ""}${todos_todayString}`
+              );
+              if (contentAddedToHeading == dailyNoteContent) {
+                templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading}' in today's daily note. Rolling todos to end of file.`;
+              } else {
+                dailyNoteContent = contentAddedToHeading;
+              }
+            }
+
+            if (
+              !templateHeadingSelected ||
+              templateHeadingNotFoundMessage.length > 0
+            ) {
+              dailyNoteContent += todos_todayString;
+            }
+
+            await this.app.vault.modify(file, dailyNoteContent);
+          }
+        }
       }
 
       // if deleteOnComplete, get yesterday's content and modify it
@@ -354,7 +483,6 @@ export default class RolloverTodosPlugin extends Plugin {
 
     this.registerEvent(
       this.app.vault.on("create", async (file) => {
-        // Check if automatic daily note creation is enabled
         if (!this.settings.rolloverOnFileCreate) return;
         this.rollover(file);
       })

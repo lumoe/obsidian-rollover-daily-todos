@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { getTodos } from "./get-todos";
+import { getTodos, getTodosBySection } from "./get-todos";
 
 test("single todo element should return itself", () => {
   // GIVEN
@@ -534,4 +534,120 @@ test("should not match malformed todos", () => {
   ];
   const todos = getTodos({ lines });
   expect(todos).toStrictEqual(["- [ ] valid todo"]);
+});
+
+// --- getTodosBySection tests ---
+
+test("getTodosBySection groups todos by heading", () => {
+  const lines = [
+    "## Routines",
+    "- [ ] brush teeth",
+    "- [x] medication",
+    "## Work",
+    "- [ ] review PR",
+    "- [ ] write docs",
+    "## Personal",
+    "- [x] groceries",
+  ];
+
+  const result = getTodosBySection({ lines });
+
+  expect(result.size).toBe(2);
+  expect(result.get("routines")).toStrictEqual(["- [ ] brush teeth"]);
+  expect(result.get("work")).toStrictEqual([
+    "- [ ] review PR",
+    "- [ ] write docs",
+  ]);
+  expect(result.has("personal")).toBe(false);
+});
+
+test("getTodosBySection puts todos before any heading under __no_heading__", () => {
+  const lines = [
+    "- [ ] orphan task",
+    "## Section",
+    "- [ ] section task",
+  ];
+
+  const result = getTodosBySection({ lines });
+
+  expect(result.get("__no_heading__")).toStrictEqual(["- [ ] orphan task"]);
+  expect(result.get("section")).toStrictEqual(["- [ ] section task"]);
+});
+
+test("getTodosBySection handles different heading levels", () => {
+  const lines = [
+    "# Top Level",
+    "- [ ] task a",
+    "### Deep Level",
+    "- [ ] task b",
+  ];
+
+  const result = getTodosBySection({ lines });
+
+  expect(result.get("top level")).toStrictEqual(["- [ ] task a"]);
+  expect(result.get("deep level")).toStrictEqual(["- [ ] task b"]);
+});
+
+test("getTodosBySection with children enabled", () => {
+  const lines = [
+    "## Dev",
+    "- [ ] main task",
+    "    - subtask detail",
+    "    - another detail",
+    "## Other",
+    "- [ ] other task",
+  ];
+
+  const result = getTodosBySection({ lines, withChildren: true });
+
+  expect(result.get("dev")).toStrictEqual([
+    "- [ ] main task",
+    "    - subtask detail",
+    "    - another detail",
+  ]);
+  expect(result.get("other")).toStrictEqual(["- [ ] other task"]);
+});
+
+test("getTodosBySection skips sections with no unfinished todos", () => {
+  const lines = [
+    "## Done Section",
+    "- [x] completed",
+    "- [x] also done",
+    "## Active Section",
+    "- [ ] still working",
+  ];
+
+  const result = getTodosBySection({ lines });
+
+  expect(result.size).toBe(1);
+  expect(result.has("done section")).toBe(false);
+  expect(result.get("active section")).toStrictEqual(["- [ ] still working"]);
+});
+
+test("getTodosBySection respects custom done status markers", () => {
+  const lines = [
+    "## Section",
+    "- [✅] done with emoji",
+    "- [🟣] in progress",
+    "- [ ] not started",
+  ];
+
+  const result = getTodosBySection({ lines, doneStatusMarkers: "✅" });
+
+  expect(result.get("section")).toStrictEqual([
+    "- [🟣] in progress",
+    "- [ ] not started",
+  ]);
+});
+
+test("getTodosBySection returns empty map when no todos exist", () => {
+  const lines = [
+    "## Section",
+    "Some text",
+    "- [x] all done",
+  ];
+
+  const result = getTodosBySection({ lines });
+
+  expect(result.size).toBe(0);
 });
