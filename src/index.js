@@ -484,25 +484,6 @@ export default class RolloverTodosPlugin extends Plugin {
     this.registerEvent(
       this.app.vault.on("create", async (file) => {
         if (!this.settings.rolloverOnFileCreate) return;
-
-        // wait for template to be applied before rolling over
-        // (timeout fallback if no template is used)
-        const content = await this.app.vault.read(file);
-        if (content.trim() === "") {
-          await new Promise((resolve) => {
-            const modifyRef = this.app.vault.on("modify", (modifiedFile) => {
-              if (modifiedFile.path === file.path) {
-                this.app.vault.offref(modifyRef);
-                resolve();
-              }
-            });
-            setTimeout(() => {
-              this.app.vault.offref(modifyRef);
-              resolve();
-            }, 5000);
-          });
-        }
-
         this.rollover(file);
       })
     );
