@@ -18,3 +18,21 @@ data.json
 
 # local developer scripts
 deployLocally.js
+.obsidian-cache
+
+
+CLAUDE.md
+
+# triage docs (local working notes — not committed)
+TRIAGE.md
+.triage/
+
+# e2e test artifacts written into the test vault during runs
+test/vaults/rollover/*.md
+test/vaults/rollover/.trash/
+
+# allow committed e2e fixtures (template files + pre-staged plugin data)
+!test/vaults/rollover/Templates/
+!test/vaults/rollover/Templates/**
+!test/vaults/rollover/.obsidian/plugins/
+!test/vaults/rollover/.obsidian/plugins/**

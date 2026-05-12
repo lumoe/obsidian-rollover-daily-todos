@@ -516,6 +516,145 @@ test("get todos supports custom status marker edge cases (inclusion)", () => {
   expect(todos).toStrictEqual(result);
 });
 
+test("does not match bullet patterns embedded mid-line (e.g. inside template literals in code blocks)", () => {
+  const lines = [
+    "```js",
+    "const items = [];",
+    "const md = items.map(t => `- [ ] ${t}`).join('\\n');",
+    "    const indented = `    - [ ] ${x}`;",
+    "```",
+    "Some prose mentioning - [ ] inline should also not match.",
+    "- [ ] this is a real todo",
+  ];
+  const todos = getTodos({ lines, withChildren: true });
+  expect(todos).toStrictEqual(["- [ ] this is a real todo"]);
+});
+
+test("(#165/#170) ignoreBlockquotes=false (default): blockquoted bullet lines still roll over", () => {
+  const lines = [
+    "- [ ] one",
+    "> - [ ] two (in callout body)",
+    "> [!tip]",
+    "> - [ ] three (in callout body)",
+  ];
+  const todos = getTodos({ lines });
+  expect(todos).toStrictEqual([
+    "- [ ] one",
+    "> - [ ] two (in callout body)",
+    "> - [ ] three (in callout body)",
+  ]);
+});
+
+test("(#165) ignoreBlockquotes=true: blockquoted todos are skipped", () => {
+  const lines = [
+    "- [ ] one",
+    "> - [ ] two (in callout body)",
+    "> [!tip]",
+    ">  - [ ] three (deeply indented blockquote)",
+    "    > - [ ] four (indented before the >)",
+    "- [ ] five",
+  ];
+  const todos = getTodos({ lines, ignoreBlockquotes: true });
+  expect(todos).toStrictEqual(["- [ ] one", "- [ ] five"]);
+});
+
+test("(#165) ignoreBlockquotes does not affect children walk for non-blockquoted parents", () => {
+  const lines = [
+    "- [ ] parent",
+    "    - some text",
+    "    - [ ] indented child todo",
+  ];
+  const todos = getTodos({
+    lines,
+    withChildren: true,
+    ignoreBlockquotes: true,
+  });
+  expect(todos).toStrictEqual([
+    "- [ ] parent",
+    "    - some text",
+    "    - [ ] indented child todo",
+  ]);
+});
+
+test("(#125) skipCompletedChildren=false (default): completed todo children are still rolled with parent", () => {
+  const lines = [
+    "- [ ] parent",
+    "    - [x] done child",
+    "    - [ ] open child",
+  ];
+  const todos = getTodos({ lines, withChildren: true });
+  expect(todos).toStrictEqual([
+    "- [ ] parent",
+    "    - [x] done child",
+    "    - [ ] open child",
+  ]);
+});
+
+test("(#125) skipCompletedChildren=true: completed todo children are dropped, non-todo children remain", () => {
+  const lines = [
+    "- [ ] parent",
+    "    - [x] done child",
+    "    - some note",
+    "    - [ ] open child",
+  ];
+  const todos = getTodos({
+    lines,
+    withChildren: true,
+    skipCompletedChildren: true,
+  });
+  expect(todos).toStrictEqual([
+    "- [ ] parent",
+    "    - some note",
+    "    - [ ] open child",
+  ]);
+});
+
+test("(#125/#170) skipCompletedChildren=true recognizes completed blockquoted children", () => {
+  const lines = [
+    "- [ ] parent",
+    "    > - [x] done child in callout",
+    "        > - [ ] grandchild that should be dropped",
+    "    - [ ] open child",
+  ];
+  const todos = getTodos({
+    lines,
+    withChildren: true,
+    skipCompletedChildren: true,
+  });
+  expect(todos).toStrictEqual(["- [ ] parent", "    - [ ] open child"]);
+});
+
+test("(#125) skipCompletedChildren=true: also drops descendants of a completed child", () => {
+  const lines = [
+    "- [ ] parent",
+    "    - [x] done child",
+    "        - [ ] grandchild that would otherwise survive",
+    "        - sub-note",
+    "    - [ ] open child",
+  ];
+  const todos = getTodos({
+    lines,
+    withChildren: true,
+    skipCompletedChildren: true,
+  });
+  expect(todos).toStrictEqual(["- [ ] parent", "    - [ ] open child"]);
+});
+
+test("(#125) respects custom done markers", () => {
+  const lines = [
+    "- [ ] parent",
+    "    - [✅] done with custom marker",
+    "    - [ ] open child",
+  ];
+  const todos = getTodos({
+    lines,
+    withChildren: true,
+    skipCompletedChildren: true,
+    doneStatusMarkers: "✅",
+  });
+  expect(todos).toStrictEqual(["- [ ] parent", "    - [ ] open child"]);
+});
+
 test("should not match malformed todos", () => {
   const lines = [
     "- [ ] valid todo",

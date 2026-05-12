@@ -31,11 +31,18 @@ export default class UndoModal extends Modal {
   }
 
   async confirmUndo(undoHistoryInstance) {
-    await this.plugin.app.vault.modify(undoHistoryInstance.today.file, undoHistoryInstance.today.oldContent);
+    if (undoHistoryInstance.today.file != undefined) {
+      await this.plugin.app.vault.modify(undoHistoryInstance.today.file, undoHistoryInstance.today.oldContent);
+    }
     if (undoHistoryInstance.previousDay.file != undefined) {
       await this.plugin.app.vault.modify(undoHistoryInstance.previousDay.file, undoHistoryInstance.previousDay.oldContent);
     }
     this.plugin.undoHistory = []
+    // (#162) clear the on-disk slot too, otherwise restarting Obsidian
+    // within the 2-minute window would rehydrate the undo and let the
+    // user replay it on top of edits made since.
+    this.plugin._persistedUndo = null
+    await this.plugin.saveSettings()
   }
 
   async onOpen() {
@@ -46,9 +53,15 @@ export default class UndoModal extends Modal {
     contentEl.createEl('h4', { text: 'Changes made with undo:' })
 
     const undoHistoryInstance = plugin.undoHistory[0]
-    let modTextArray = [await this.parseDay(undoHistoryInstance.today)]
+    let modTextArray = []
+    if (undoHistoryInstance.today.file != undefined) {
+      modTextArray.push(await this.parseDay(undoHistoryInstance.today))
+    }
     if (undoHistoryInstance.previousDay.file != undefined) {
       modTextArray.push(await this.parseDay(undoHistoryInstance.previousDay))
+    }
+    if (modTextArray.length === 0) {
+      modTextArray.push('- The previously modified files are no longer available; nothing to undo.')
     }
     modTextArray.forEach(txt => {
       contentEl.createEl('div', { text: txt })

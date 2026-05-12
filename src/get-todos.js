@@ -11,17 +11,21 @@ class TodoParser {
   // Boolean that encodes whether nested items should be rolled over
   #withChildren;
 
+  // (#165) Boolean: when true, lines whose first non-whitespace char is `>`
+  // (i.e. blockquotes / callouts like `> [!tip]`) are not treated as todos.
+  #ignoreBlockquotes;
+
+  // (#125) When true, completed-todo children (and their descendants) are
+  // dropped during the children walk. Non-todo children (text/sub-bullets)
+  // are unaffected. Only meaningful when #withChildren is true.
+  #skipCompletedChildren;
+
   // Parse content with segmentation to allow for Unicode grapheme clusters
   #parseIntoChars(content, contentType = "content") {
-    // Use Intl.Segmenter to properly split grapheme clusters if available,
-    // otherwise fall back to Array.from. The fallback should not trigger in
-    // Obsidian since it uses Electron which supports Intl.Segmenter.
     if (typeof Intl !== "undefined" && Intl.Segmenter) {
       const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
       return Array.from(segmenter.segment(content), (s) => s.segment);
     } else {
-      // Array.from() splits surrogate pairs correctly but not complex grapheme clusters
-      // (e.g., 👨‍👩‍👧‍👦 would be split incorrectly) and fail to match.
       console.error(
         `Intl.Segmenter not available, falling back to Array.from() for ${contentType}`
       );
@@ -29,9 +33,17 @@ class TodoParser {
     }
   }
 
-  constructor(lines, withChildren, doneStatusMarkers) {
+  constructor(
+    lines,
+    withChildren,
+    doneStatusMarkers,
+    ignoreBlockquotes,
+    skipCompletedChildren
+  ) {
     this.#lines = lines;
     this.#withChildren = withChildren;
+    this.#ignoreBlockquotes = !!ignoreBlockquotes;
+    this.#skipCompletedChildren = !!skipCompletedChildren;
     if (doneStatusMarkers) {
       this.doneStatusMarkers = this.#parseIntoChars(
         doneStatusMarkers,
@@ -40,15 +52,36 @@ class TodoParser {
     }
   }
 
+  // Returns true if the line is a checkbox whose content is a done marker.
+  // (Distinct from #isTodo which is true only for *incomplete* todos.)
+  #isDoneTodo(s) {
+    if (this.#ignoreBlockquotes && /^\s*>/.test(s)) {
+      return false;
+    }
+    const match = s.match(/^\s*(?:>\s*)*[*+\-] \[(.+?)\]/);
+    if (!match) return false;
+    const contentChars = this.#parseIntoChars(match[1], "checkbox content");
+    if (contentChars.length !== 1) return false;
+    return contentChars.some((c) => this.doneStatusMarkers.includes(c));
+  }
+
   // Returns true if string s is a todo-item
   #isTodo(s) {
-    // Extract the checkbox content
-    const match = s.match(/\s*[*+-] \[(.+?)\]/);
+    // (#165) optionally skip blockquoted / callout lines (those whose first
+    // non-whitespace char is `>`)
+    if (this.#ignoreBlockquotes && /^\s*>/.test(s)) {
+      return false;
+    }
+
+    // (cluster A / PR #170) anchor to start of line so bullet patterns
+    // embedded in code blocks / template literals are not matched. Allow
+    // Markdown blockquote prefixes so PR #165 can control callout behavior
+    // through the ignoreBlockquotes setting instead of dropping them always.
+    const match = s.match(/^\s*(?:>\s*)*[*+\-] \[(.+?)\]/);
     if (!match) return false;
 
     const checkboxContent = match[1];
 
-    // Parse content with segmentation to allow for Unicode grapheme clusters
     const contentChars = this.#parseIntoChars(
       checkboxContent,
       "checkbox content"
@@ -59,10 +92,8 @@ class TodoParser {
       return false;
     }
 
-    const singleChar = contentChars[0];
-
     // Exclude grapheme modifiers that are not valid as standalone content
-    const graphemeModifiers = ['\u202E', '\u200B', '\u200C', '\u200D'];
+    const graphemeModifiers = ["‮", "​", "‌", "‍"];
     const hasGraphemeModifier = contentChars.some((char) =>
       graphemeModifiers.includes(char)
     );
@@ -70,40 +101,46 @@ class TodoParser {
       return false;
     }
 
-    // Check if the checkbox content contains any characters that are in doneStatusMarkers
     const hasDoneMarker = contentChars.some((char) =>
       this.doneStatusMarkers.includes(char)
     );
-
-    // Return true (is a todo) if it does NOT contain any done markers
     return !hasDoneMarker;
   }
 
   // Returns true if line after line-number `l` is a nested item
   #hasChildren(l) {
-    if (l + 1 >= this.#lines.length) {
-      return false;
-    }
+    if (l + 1 >= this.#lines.length) return false;
     const indCurr = this.#getIndentation(l);
     const indNext = this.#getIndentation(l + 1);
-    if (indNext > indCurr) {
-      return true;
-    }
-    return false;
+    return indNext > indCurr;
   }
 
-  // Returns a list of strings that are the nested items after line `parentLinum`
+  // Returns { children, consumed } — children is the list of nested items to
+  // include after line `parentLinum`; consumed is the number of source lines
+  // actually walked (which can exceed children.length when skipping).
   #getChildren(parentLinum) {
     const children = [];
     let nextLinum = parentLinum + 1;
     while (this.#isChildOf(parentLinum, nextLinum)) {
-      children.push(this.#lines[nextLinum]);
+      const line = this.#lines[nextLinum];
+      if (this.#skipCompletedChildren && this.#isDoneTodo(line)) {
+        // (#125) drop this completed child *and its descendants*
+        const completedChildIndent = this.#getIndentation(nextLinum);
+        nextLinum++;
+        while (
+          nextLinum < this.#lines.length &&
+          this.#getIndentation(nextLinum) > completedChildIndent
+        ) {
+          nextLinum++;
+        }
+        continue;
+      }
+      children.push(line);
       nextLinum++;
     }
-    return children;
+    return { children, consumed: nextLinum - parentLinum - 1 };
   }
 
-  // Returns true if line `linum` has more indentation than line `parentLinum`
   #isChildOf(parentLinum, linum) {
     if (parentLinum >= this.#lines.length || linum >= this.#lines.length) {
       return false;
@@ -111,12 +148,10 @@ class TodoParser {
     return this.#getIndentation(linum) > this.#getIndentation(parentLinum);
   }
 
-  // Returns the number of whitespace-characters at beginning of string at line `l`
   #getIndentation(l) {
     return this.#lines[l].search(/\S/);
   }
 
-  // Returns a list of strings that represents all the todos along with there potential children
   getTodos() {
     let todos = [];
     for (let l = 0; l < this.#lines.length; l++) {
@@ -124,9 +159,9 @@ class TodoParser {
       if (this.#isTodo(line)) {
         todos.push(line);
         if (this.#withChildren && this.#hasChildren(l)) {
-          const cs = this.#getChildren(l);
-          todos = [...todos, ...cs];
-          l += cs.length;
+          const { children, consumed } = this.#getChildren(l);
+          todos = [...todos, ...children];
+          l += consumed;
         }
       }
     }
@@ -134,12 +169,19 @@ class TodoParser {
   }
 }
 
-// Utility-function that acts as a thin wrapper around `TodoParser`
 export const getTodos = ({
   lines,
   withChildren = false,
   doneStatusMarkers = null,
+  ignoreBlockquotes = false,
+  skipCompletedChildren = false,
 }) => {
-  const todoParser = new TodoParser(lines, withChildren, doneStatusMarkers);
+  const todoParser = new TodoParser(
+    lines,
+    withChildren,
+    doneStatusMarkers,
+    ignoreBlockquotes,
+    skipCompletedChildren
+  );
   return todoParser.getTodos();
 };
