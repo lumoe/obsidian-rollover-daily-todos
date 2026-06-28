@@ -40,43 +40,32 @@ class TodoParser {
     }
   }
 
-  // Returns true if string s is a todo-item
-  #isTodo(s) {
-    // Extract the checkbox content
+  // Returns the single status marker of a well-formed checkbox line, or null
+  // if the line is not a valid checkbox todo-item
+  #checkboxMarker(s) {
     const match = s.match(/\s*[*+-] \[(.+?)\]/);
-    if (!match) return false;
+    if (!match) return null;
 
-    const checkboxContent = match[1];
+    const contentChars = this.#parseIntoChars(match[1], "checkbox content");
 
-    // Parse content with segmentation to allow for Unicode grapheme clusters
-    const contentChars = this.#parseIntoChars(
-      checkboxContent,
-      "checkbox content"
-    );
+    // A valid marker is exactly one grapheme cluster and not a bare modifier
+    if (contentChars.length !== 1) return null;
+    const graphemeModifiers = ["\u202E", "\u200B", "\u200C", "\u200D"];
+    if (graphemeModifiers.includes(contentChars[0])) return null;
 
-    // Valid checkbox content must be exactly one grapheme cluster
-    if (contentChars.length !== 1) {
-      return false;
-    }
+    return contentChars[0];
+  }
 
-    const singleChar = contentChars[0];
+  // Returns true if string s is an unfinished todo-item
+  #isTodo(s) {
+    const marker = this.#checkboxMarker(s);
+    return marker !== null && !this.doneStatusMarkers.includes(marker);
+  }
 
-    // Exclude grapheme modifiers that are not valid as standalone content
-    const graphemeModifiers = ['\u202E', '\u200B', '\u200C', '\u200D'];
-    const hasGraphemeModifier = contentChars.some((char) =>
-      graphemeModifiers.includes(char)
-    );
-    if (hasGraphemeModifier) {
-      return false;
-    }
-
-    // Check if the checkbox content contains any characters that are in doneStatusMarkers
-    const hasDoneMarker = contentChars.some((char) =>
-      this.doneStatusMarkers.includes(char)
-    );
-
-    // Return true (is a todo) if it does NOT contain any done markers
-    return !hasDoneMarker;
+  // Returns true if string s is a completed todo-item
+  #isCompletedTodo(s) {
+    const marker = this.#checkboxMarker(s);
+    return marker !== null && this.doneStatusMarkers.includes(marker);
   }
 
   // Returns true if line after line-number `l` is a nested item
@@ -132,6 +121,60 @@ class TodoParser {
     }
     return todos;
   }
+
+  // Returns true if the line at `l` is empty or whitespace-only
+  #isBlank(l) {
+    return this.#getIndentation(l) === -1;
+  }
+
+  // Returns the index one past the last line nested under line `l`. A blank
+  // line is absorbed into the subtree only when a more-indented line follows
+  // it, so a stray blank line cannot detach a completed parent from a nested
+  // open todo. Trailing blank lines are excluded.
+  #getSubtreeEnd(l) {
+    const parentIndentation = this.#getIndentation(l);
+    let lastNested = l;
+    for (let i = l + 1; i < this.#lines.length; i++) {
+      if (this.#isBlank(i)) continue;
+      if (this.#getIndentation(i) <= parentIndentation) break;
+      lastNested = i;
+    }
+    return lastNested + 1;
+  }
+
+  #subtreeHasOpenTodo(start, end) {
+    for (let i = start; i < end; i++) {
+      if (this.#isTodo(this.#lines[i])) return true;
+    }
+    return false;
+  }
+
+  // Returns the lines with every completed todo-subtree that has no remaining
+  // open todo removed. A completed todo with an open descendant is kept so the
+  // open item retains its context, while fully-completed branches beneath it
+  // are still pruned.
+  getLinesWithCompletedTodosPruned() {
+    const keep = new Array(this.#lines.length).fill(true);
+
+    for (let l = 0; l < this.#lines.length; ) {
+      if (!this.#isCompletedTodo(this.#lines[l])) {
+        l++;
+        continue;
+      }
+
+      const end = this.#getSubtreeEnd(l);
+      if (this.#subtreeHasOpenTodo(l + 1, end)) {
+        // Descend into the subtree to prune its fully-completed branches
+        l++;
+        continue;
+      }
+
+      for (let i = l; i < end; i++) keep[i] = false;
+      l = end;
+    }
+
+    return this.#lines.filter((_, i) => keep[i]);
+  }
 }
 
 // Utility-function that acts as a thin wrapper around `TodoParser`
@@ -142,4 +185,10 @@ export const getTodos = ({
 }) => {
   const todoParser = new TodoParser(lines, withChildren, doneStatusMarkers);
   return todoParser.getTodos();
+};
+
+// Utility-function that removes completed todo-subtrees with no open todo left
+export const pruneCompletedTodos = ({ lines, doneStatusMarkers = null }) => {
+  const todoParser = new TodoParser(lines, false, doneStatusMarkers);
+  return todoParser.getLinesWithCompletedTodosPruned();
 };

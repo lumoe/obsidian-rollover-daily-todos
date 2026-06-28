@@ -6,7 +6,7 @@ import {
 } from "obsidian-daily-notes-interface";
 import UndoModal from "./ui/UndoModal";
 import RolloverSettingTab from "./ui/RolloverSettingTab";
-import { getTodos } from "./get-todos";
+import { getTodos, pruneCompletedTodos } from "./get-todos";
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
@@ -48,6 +48,7 @@ export default class RolloverTodosPlugin extends Plugin {
       rolloverOnFileCreate: true,
       doneStatusMarkers: "xX-",
       leadingNewLine: true,
+      removeCompletedTodos: false,
     };
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -198,8 +199,13 @@ export default class RolloverTodosPlugin extends Plugin {
         10000
       );
     } else {
-      const { templateHeading, deleteOnComplete, removeEmptyTodos, leadingNewLine } =
-        this.settings;
+      const {
+        templateHeading,
+        deleteOnComplete,
+        removeEmptyTodos,
+        leadingNewLine,
+        removeCompletedTodos: removeCompletedTodosSetting,
+      } = this.settings;
 
       // check if there is a daily note from yesterday
       const lastDailyNote = this.getLastDailyNote();
@@ -247,6 +253,16 @@ export default class RolloverTodosPlugin extends Plugin {
         });
       } else {
         todosAdded = todos_yesterday.length;
+      }
+
+      // drop completed todos that have no unfinished sub-todo, so today only
+      // carries open work (and the completed parents needed to keep it nested)
+      if (removeCompletedTodosSetting) {
+        todos_today = pruneCompletedTodos({
+          lines: todos_today,
+          doneStatusMarkers: this.settings.doneStatusMarkers,
+        });
+        todosAdded = todos_today.length;
       }
 
       // get today's content and modify it

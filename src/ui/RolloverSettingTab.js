@@ -67,6 +67,20 @@ export default class RolloverSettingTab extends PluginSettingTab {
       );
 
     new Setting(this.containerEl)
+      .setName("Remove completed todos when rolling over")
+      .setDesc(
+        `Skip completed todos so they are not carried into today's note. A completed todo that still has an unfinished (open) sub-todo is kept so the open item retains its context. Only affects completed todos pulled in via "Roll over children of todos"; previous notes are left untouched.`
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.removeCompletedTodos || false)
+          .onChange((value) => {
+            this.plugin.settings.removeCompletedTodos = value;
+            this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(this.containerEl)
       .setName("Remove empty todos in rollover")
       .setDesc(
         `If you have empty todos, they will not be rolled over to the next day.`
