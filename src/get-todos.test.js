@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { getTodos } from "./get-todos";
+import { getTodos, pruneCompletedTodos } from "./get-todos";
 
 test("single todo element should return itself", () => {
   // GIVEN
@@ -514,6 +514,200 @@ test("get todos supports custom status marker edge cases (inclusion)", () => {
     "- [é] Simple accented character 2",
   ];
   expect(todos).toStrictEqual(result);
+});
+
+test("prune removes a standalone completed todo", () => {
+  // GIVEN
+  const lines = ["- [ ] open", "- [x] done"];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN
+  expect(result).toStrictEqual(["- [ ] open"]);
+});
+
+test("prune keeps open todos and non-todo lines untouched", () => {
+  // GIVEN
+  const lines = [
+    "# To Dos",
+    "",
+    "- [ ] open",
+    "- [x] done",
+    "Some note",
+  ];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN
+  expect(result).toStrictEqual(["# To Dos", "", "- [ ] open", "Some note"]);
+});
+
+test("prune removes a completed parent whose children are all completed", () => {
+  // GIVEN
+  const lines = [
+    "- [x] done parent",
+    "    - [x] done child",
+    "    - some note under it",
+  ];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN
+  expect(result).toStrictEqual([]);
+});
+
+test("prune keeps a completed parent that has an open child", () => {
+  // GIVEN
+  const lines = [
+    "- [x] done parent",
+    "    - [ ] open child",
+  ];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN
+  expect(result).toStrictEqual([
+    "- [x] done parent",
+    "    - [ ] open child",
+  ]);
+});
+
+test("prune keeps a completed parent with an open child but prunes its completed siblings", () => {
+  // GIVEN
+  const lines = [
+    "- [x] done parent",
+    "    - [ ] open child",
+    "    - [x] done child (no open descendant)",
+  ];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN
+  expect(result).toStrictEqual([
+    "- [x] done parent",
+    "    - [ ] open child",
+  ]);
+});
+
+test("prune keeps ancestors of a deeply nested open todo", () => {
+  // GIVEN
+  const lines = [
+    "- [x] grandparent",
+    "    - [x] parent",
+    "        - [ ] deeply nested open",
+  ];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN
+  expect(result).toStrictEqual([
+    "- [x] grandparent",
+    "    - [x] parent",
+    "        - [ ] deeply nested open",
+  ]);
+});
+
+test("prune respects custom done status markers", () => {
+  // GIVEN
+  const lines = [
+    "- [C] custom done",
+    "- [x] not done under custom markers",
+    "- [ ] open",
+  ];
+
+  // WHEN - only 'C' counts as done
+  const result = pruneCompletedTodos({ lines, doneStatusMarkers: "C" });
+
+  // THEN
+  expect(result).toStrictEqual([
+    "- [x] not done under custom markers",
+    "- [ ] open",
+  ]);
+});
+
+test("prune keeps a completed parent when a blank line separates it from an open child", () => {
+  // GIVEN - a stray blank line sits between the parent and its open child
+  const lines = [
+    "- [x] done parent",
+    "    - [x] done leaf",
+    "",
+    "    - [ ] open child",
+  ];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN - the parent is preserved (not orphaned by the blank line) and the
+  // open child stays; the fully-done leaf is still pruned
+  expect(result).toStrictEqual([
+    "- [x] done parent",
+    "",
+    "    - [ ] open child",
+  ]);
+});
+
+test("prune still removes a fully-completed subtree that contains blank lines", () => {
+  // GIVEN
+  const lines = [
+    "- [x] done parent",
+    "    - [x] done child",
+    "",
+    "    - [x] another done child",
+  ];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN - whole subtree (including the absorbed blank line) is removed
+  expect(result).toStrictEqual([]);
+});
+
+test("prune does not absorb a blank line between two sibling todos", () => {
+  // GIVEN - blank line separates same-indent todos; not a parent/child relation
+  const lines = [
+    "- [x] done sibling",
+    "",
+    "- [ ] open sibling",
+  ];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN - only the done sibling is removed; blank line and open sibling stay
+  expect(result).toStrictEqual(["", "- [ ] open sibling"]);
+});
+
+test("prune excludes trailing blank lines after a removed subtree", () => {
+  // GIVEN
+  const lines = [
+    "- [x] done parent",
+    "    - [x] done child",
+    "",
+    "# Next heading",
+  ];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN - trailing blank line and heading are preserved
+  expect(result).toStrictEqual(["", "# Next heading"]);
+});
+
+test("prune leaves a note with only open todos unchanged", () => {
+  // GIVEN
+  const lines = ["- [ ] a", "    - [ ] b", "- [ ] c"];
+
+  // WHEN
+  const result = pruneCompletedTodos({ lines });
+
+  // THEN
+  expect(result).toStrictEqual(lines);
 });
 
 test("should not match malformed todos", () => {
